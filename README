@@ -1,0 +1,5 @@
+lololololololol last.fm
+
+<pre># perl -MCPAN -e shell
+
+cpan> install Net::LastFM::Submission</pre>

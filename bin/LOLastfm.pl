@@ -133,7 +133,7 @@ sub get {
             $song->{length} = $1;
         }
         else {
-            $song->{length} = '';
+            return 0; # if there's not length we can't do anything.
         }
 
         $song->{source} = 'P';

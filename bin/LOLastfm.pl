@@ -22,6 +22,8 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
+use Data::Dumper;
+
 my $Version = '0.1';
 
 my %options;
@@ -158,9 +160,13 @@ sub nowPlaying {
 sub submit {
     my $song = shift;
 
-    Cache::submit();
+    my $check = Cache::submit();
 
-    my $check = $LastFM->submit($song);
+    if (defined $check->{error}) {
+        Cache::push($song);
+    }
+
+    $check = $LastFM->submit($song);
 
     if (defined $check->{error}) {
         Cache::push($song)
@@ -241,9 +247,11 @@ sub submit {
 
         my $check = $LastFM->submit(@songs);
 
-        if (not defined $check->{error}) {
-            flush(50);
+        if (defined $check->{error}) {
+            return $check;
         }
+
+        flush(50);
     }
 }
 

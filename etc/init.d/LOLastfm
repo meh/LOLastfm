@@ -1,0 +1,17 @@
+#! /sbin/runscript
+
+depend() {
+    need net
+}
+
+start() {
+    ebegin "Starting LOLastfm"
+    start-stop-daemon --start --quiet --exec /usr/bin/LOLastfm --pidfile /tmp/LOLastfm.pid &
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping LOLastfm"
+    start-stop-daemon --stop --quiet --pidfile /tmp/LOLastfm.pid
+    eend$?
+}

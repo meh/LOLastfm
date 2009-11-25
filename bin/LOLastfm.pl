@@ -24,10 +24,8 @@ use Net::LastFM::Submission;
 
 my $Version = '0.1';
 
-use Data::Dumper;
-
 my %options;
-getopts('u:p:P:f:c:h', \%options);
+getopts('u:p:P:f:c:a:h', \%options);
 
 if ($options{h}) {
     print Misc::usage();
@@ -37,6 +35,7 @@ if ($options{h}) {
 my $Config = XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray => 0);
 my $Player = $options{P} || $Config->{player} || die "What player should I use?";
 my $Cache  = $options{c} || $Config->{cache} || '/var/lib/LOLastfm/cache.xml';
+my $As     = $options{a} || $Config->{as} || `whoami`;
 
 my $LastFM = new Net::LastFM::Submission(
     user     => $options{u} || $Config->{user},
@@ -67,7 +66,7 @@ while (1) {
 
     if ($old->{title} eq $song->{title} && $old->{album} eq $song->{album} && $old->{artist} eq $song->{artist} && $old->{seconds} < $song->{seconds}) {
         if (not $Song::NowPlaying) {
-            Song::nowPlaying();
+            Song::nowPlaying($song);
         }
 
         $old = $song;
@@ -79,8 +78,7 @@ while (1) {
         Song::submit($old);
     }
 
-    Song::nowPlaying();
-
+    Song::nowPlaying($song);
 
     $old = $song;
 
@@ -96,7 +94,7 @@ sub get {
     my $song = {};
 
     if ($Player eq 'moc') {
-        $output = `mocp -i`;
+        $output = `su -c "mocp -i" $As`;
 
         if ($output !~ /State: PLAY/) {
             return 0;
@@ -256,6 +254,7 @@ sub usage {
 Usage: LOLlastfm [options]
 
 -h          : show this help.
+-a user     : execute the command as that user (eg: for mocp you have to be the user using it)
 -f file     : use the given file as config file
 -c cache    : use the given cache as caching file
 -P player   : use the given player as scrobbling one

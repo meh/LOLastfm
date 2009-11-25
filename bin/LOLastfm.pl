@@ -22,8 +22,6 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
-use Data::Dumper;
-
 my $Version = '0.1';
 
 my %options;

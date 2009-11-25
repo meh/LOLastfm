@@ -1,5 +1,10 @@
 <?xml version="1.0"?>
 
 <config>
+    <user>xxxx</user>
+    <password>yyyy</password>
+
     <player>moc</player>
+
+    <cache>/var/lib/LOLastfm/cache.xml</cache>
 </config>

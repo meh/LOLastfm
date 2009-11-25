@@ -48,36 +48,39 @@ my $LastFM = new Net::LastFM::Submission(
 #    client_ver => $Version,
 );
 
-$LastFM->handshake();
+my $Handshake = $LastFM->handshake();
 
-my $old = {
-    title   => '',
-    album   => '',
-    artist  => '',
-    seconds => 42,
-    length  => 9001,
-};
+my $old = Song::reset();
 
 while (1) {
     my $song = Song::get();
 
     if (!$song) {
+        if ($old->{seconds} >= $old->{length}-20) {
+            Song::submit($old);
+            $old = Song::reset();
+        }
+
         sleep(5);
         next;
     }
 
     if ($old->{title} eq $song->{title} && $old->{album} eq $song->{album} && $old->{artist} eq $song->{artist} && $old->{seconds} < $song->{seconds}) {
+        if (not $Song::NowPlaying) {
+            Song::nowPlaying();
+        }
+
         $old = $song;
         sleep(5);
         next;
     }
 
     if ($old->{seconds} >= $old->{length}-20) {
-        $LastFM->submit($old);
+        Song::submit($old);
     }
 
-    $LastFM->now_playing($song);
-    print "Now playing $song->{title}", "\n";
+    Song::nowPlaying();
+
 
     $old = $song;
 
@@ -85,6 +88,8 @@ while (1) {
 }
 
 package Song;
+
+our $NowPlaying = 0;
 
 sub get {
     my $output;
@@ -136,6 +141,111 @@ sub get {
         $song->{source} = 'P';
 
         return $song;
+    }
+}
+
+sub nowPlaying {
+    my $song  = shift;
+    my $check = $LastFM->now_playing($song);
+
+    if (defined $check->{error}) {
+        $NowPlaying = 0;
+    }
+    else {
+        $NowPlaying = 1;
+    }
+
+}
+
+sub submit {
+    my $song = shift;
+
+    Cache::submit();
+
+    my $check = $LastFM->submit($song);
+
+    if (defined $check->{error}) {
+        Cache::push($song)
+    }
+}
+
+sub reset {
+    return {
+        title   => '',
+        album   => '',
+        artist  => '',
+        seconds => 42,
+        length  => 9001,
+    };
+}
+
+package Cache;
+
+sub push {
+    my $song = shift;
+
+    open my $cache, ">>", $Cache;
+    print $cache "$song->{title} ||| $song->{album} ||| $song->{artist} ||| $song->{length} ||| $song->{time}", "\n";
+    close $cache;
+}
+
+sub get {
+    my $number  = shift;
+    my $counter = 0;
+    my @songs;
+
+    open my $cache, "<", $Cache;
+    while (<$cache>) {
+        my @data = split / \|\|\| /, $_;
+        CORE::push @songs, { title => $data[0], album => $data[1], artist => $data[2], length => $data[3], time => $data[4] };
+
+        if (++$counter >= $number) {
+            last;
+        }
+    }
+    close $cache;
+
+    return @songs;
+}
+
+sub flush {
+    my $number  = shift;
+    my $counter = 0;
+    my @songs;
+
+    open my $cache, "<", $Cache;
+    while (<$cache>) {
+        if (++$counter >= $number) {
+            last;
+        }
+    }
+    my @rest = <$cache>;
+    close $cache;
+    
+    open $cache, ">", $Cache;
+    for my $line (@rest) {
+        print $cache, "$line\n";
+    }
+    close $cache;
+}
+
+sub submit {
+    if (defined $Handshake->{error}) {
+        $Handshake = $LastFM->handshake();
+    }
+
+    while (1) {
+        my @songs = get(50);
+
+        if ($#songs == 0) {
+            last;
+        }
+
+        my $check = $LastFM->submit(@songs);
+
+        if (not defined $check->{error}) {
+            flush(50);
+        }
     }
 }
 

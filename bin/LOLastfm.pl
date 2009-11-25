@@ -162,6 +162,7 @@ sub submit {
 
     if (defined $check->{error}) {
         Cache::push($song);
+        return;
     }
 
     $check = $LastFM->submit($song);

@@ -13,5 +13,5 @@ start() {
 stop() {
     ebegin "Stopping LOLastfm"
     start-stop-daemon --stop --quiet --pidfile /tmp/LOLastfm.pid
-    eend$?
+    eend $?
 }

@@ -211,7 +211,7 @@ sub flush {
     
     open $cache, ">", $Cache;
     for my $line (@rest) {
-        print $cache, $line;
+        print $cache $line;
     }
     close $cache;
 }

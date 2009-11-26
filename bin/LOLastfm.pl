@@ -20,10 +20,10 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
-my $Version = '0.1';
+my $Version = '0.2';
 
 my %options;
-getopts('u:p:P:f:C:A:S:E:h', \%options);
+getopts('u:p:P:f:C:S:E:h', \%options);
 
 if ($options{h}) {
     print Misc::usage();
@@ -47,6 +47,10 @@ my $LastFM = new Net::LastFM::Submission(
 );
 
 my $Handshake = $LastFM->handshake();
+
+if (not defined $Handshake->{error}) {
+    Cache::submit();
+}
 
 my $old = Song::reset();
 
@@ -84,57 +88,14 @@ package Song;
 our $NowPlaying = 0;
 
 sub get {
-    my $output;
-    my $command;
-    my $song = {};
-
     if ($Player eq 'moc') {
-        $command = ($As ? "su -c 'mocp -i' $As" : "mocp -i");
-        $output  = `$command`;
-
-        if ($output !~ /State: PLAY/) {
-            return 0;
-        }
-
-        if ($output =~ m{SongTitle: (.+)$}m) {
-            $song->{title} = $1;
-        }
-        else {
-            $song->{title} = '';
-        }
-
-        if ($output =~ m{Album: (.+)$}m) {
-            $song->{album} = $1;
-        }
-        else {
-            $song->{album} = '';
-        }
-
-        if ($output =~ m{Artist: (.+)$}m) {
-            $song->{artist} = $1;
-        }
-        else {
-            $song->{artist} = '';
-        }
-
-        if ($output =~ m{CurrentSec: (.+)$}m) {
-            $song->{seconds} = $1;
-            $song->{time}    = time() - $1;
-        }
-        else {
-            $song->{seconds} = '';
-        }
-
-        if ($output =~ m{TotalSec: (.+)$}m) {
-            $song->{length} = $1;
-        }
-        else {
-            return 0; # if there's not length we can't do anything.
-        }
-
-        $song->{source} = 'P';
-
-        return $song;
+        return Player::MOC::get();
+    }
+    elsif ($Player eq 'mpd') {
+        return Player::MPD::get();
+    }
+    else {
+        die "No supported player has been selected.";
     }
 }
 
@@ -214,7 +175,7 @@ sub get {
 
     open my $cache, "<", $Cache;
     while (<$cache>) {
-        my $line = $_;
+        my $line = chomp($_);
 
         if ($line =~ m{^(.+): (.+)$}) {
             my @data = split /$1/, $2;
@@ -250,7 +211,7 @@ sub flush {
     
     open $cache, ">", $Cache;
     for my $line (@rest) {
-        print $cache, "$line\n";
+        print $cache, $line;
     }
     close $cache;
 }
@@ -267,7 +228,7 @@ sub submit {
     while (1) {
         my @songs = get(50);
 
-        if ($#songs == 0) {
+        if (!@songs) {
             last;
         }
 
@@ -284,6 +245,114 @@ sub submit {
     }
 }
 
+package Player::MOC;
+
+sub get {
+    my $song    = {};
+    my $command = ($Config->{moc}->{as}) ? "su -c 'mocp -i' $Config->{moc}->{as}" : "mocp -i";
+    my $output  = `$command`;
+
+    if ($output !~ /State: PLAY/) {
+        return 0;
+    }
+
+    if ($output =~ m{SongTitle: (.+)$}m) {
+        $song->{title} = $1;
+    }
+    else {
+        $song->{title} = '';
+    }
+
+    if ($output =~ m{Artist: (.+)$}m) {
+        $song->{artist} = $1;
+    }
+    else {
+        $song->{artist} = '';
+    }
+
+    if (!$song->{title} && !$song->{artist}) {
+        return 0;
+    }
+
+    if ($output =~ m{Album: (.+)$}m) {
+        $song->{album} = $1;
+    }
+    else {
+        $song->{album} = '';
+    }
+
+    if ($output =~ m{CurrentSec: (.+)$}m) {
+        $song->{seconds} = $1;
+        $song->{time}    = time() - $1;
+    }
+    else {
+        $song->{seconds} = '';
+    }
+
+    if ($output =~ m{TotalSec: (.+)$}m) {
+        $song->{length} = $1;
+    }
+    else {
+        return 0; # if there's not length we can't do anything.
+    }
+
+    $song->{source} = 'P';
+    $song->{id}     = '';
+
+    return $song;
+}
+
+package Player::MPD;
+
+my $connection = newConnection();
+
+sub newConnection {
+    use Audio::MPD;
+
+    return new Audio::MPD({
+        host => $Config->{mpd}->{host} || undef,
+        port => $Config->{mpd}->{port} || undef,
+
+        user     => $Config->{mpd}->{user} || undef,
+        password => $Config->{mpd}->{password} || undef,
+    
+        conntype => 'reuse',
+    });
+}
+
+sub get {
+    use Audio::MPD;
+
+    my $song = {};
+
+    if (!$connection->ping()) {
+        $connection = newConnection();
+    }
+
+    my $mpdState = $connection->status();
+
+    if ($mpdState->{state} != 'play') {
+        return 0;
+    }
+
+    my $mpdSong = $connection->current();
+
+    $song->{title}   = $mpdSong->{title};
+    $song->{artist}  = $mpdSong->{artist};
+
+    if (!$song->{title} && !$song->{artist}) {
+        return 0;
+    }
+
+    $song->{album}   = $mpdSong->{album};
+    $song->{seconds} = $mpdState->{time}->{seconds_sofar};
+    $song->{length}  = $mpdSong->{time};
+    $song->{id}      = $mpdSong->{track};
+    $song->{source}  = 'P';
+
+    return $song;
+}
+
 package Misc;
 
 sub usage {
@@ -296,7 +365,6 @@ Usage: LOLlastfm [options]
 -u user     : use the given username instead of the config one
 -p password : use the given password instead of the config one
 
--A user     : execute the command as that user (eg: for mocp you have to be the user using it)
 -C cache    : use the given cache as caching file
 -P player   : use the given player as scrobbling one
 -S seconds  : sends the song as listened when you got past (songLength - seconds)

@@ -1,9 +1,6 @@
 <?xml version="1.0"?>
 
 <config>
-    <!-- Uncomment the line below if you use it as booting service or as root and put your set your username -->
-    <!-- <as>user</as> -->
-
     <!-- last.fm login data -->
     <lastfm>
         <user>xxxx</user>
@@ -13,12 +10,28 @@
     <!-- Players: moc -->
     <player>moc</player>
 
-    <!-- sends the song as listened when you got past (songLength - seconds) -->
+    <!-- Sends the song as listened when you got past (songLength - seconds) -->
     <seconds>20</seconds>
 
-    <!-- encoding to automatically encode from, last.fm needs utf8 strings -->
+    <!-- Encoding to automatically encode from, last.fm needs utf8 strings -->
     <encoding>utf8</encoding>
 
-    <!-- path to the cache file, if no file is given it won't cache listenings -->
+    <!-- Path to the cache file, if no file is given it won't cache listenings -->
     <cache>/var/lib/LOLastfm/cache</cache>
+
+    <moc>
+        <!-- Uncomment the line below if you use it as booting service or as root and put your set your username -->
+        <!-- because running mocp with another user would run another moc daemon and LOLastfm wouldn't get the   -->
+        <!-- needed informations.                                                                                -->
+        <!-- <as>user</as> -->
+    </moc>
+
+    <mpd>
+        <!-- Uncomment and set the needed parts -->
+        <!-- <host></host> -->
+        <!-- <port></port> -->
+
+        <!-- <user></user> -->
+        <!-- <password><password> -->
+    </mpd>
 </config>

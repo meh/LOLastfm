@@ -59,30 +59,25 @@ while (1) {
             Song::submit($old);
             $old = Song::reset();
         }
-
-        sleep(5);
-        next;
     }
+    else {
+        if ($old->{title} eq $song->{title} && $old->{album} eq $song->{album} && $old->{artist} eq $song->{artist} && $old->{seconds} < $song->{seconds}) {
+            if (not $Song::NowPlaying) {
+                Song::nowPlaying($song);
+            }
+        }
+        else {
+            if ($old->{seconds} >= $old->{length}-20) {
+                Song::submit($old);
+            }
 
-    if ($old->{title} eq $song->{title} && $old->{album} eq $song->{album} && $old->{artist} eq $song->{artist} && $old->{seconds} < $song->{seconds}) {
-        if (not $Song::NowPlaying) {
             Song::nowPlaying($song);
         }
 
         $old = $song;
-        sleep(5);
-        next;
     }
 
-    if ($old->{seconds} >= $old->{length}-20) {
-        Song::submit($old);
-    }
-
-    Song::nowPlaying($song);
-
-    $old = $song;
-
-    sleep(5);
+    sleep 5;
 }
 
 package Song;
@@ -153,6 +148,7 @@ sub nowPlaying {
         $NowPlaying = 1;
     }
 
+    return $check;
 }
 
 sub submit {
@@ -161,6 +157,7 @@ sub submit {
     my $check = Cache::submit();
 
     if (defined $check->{error}) {
+        Misc::checkDisconnection($check);
         Cache::push($song);
         return;
     }
@@ -168,8 +165,11 @@ sub submit {
     $check = $LastFM->submit($song);
 
     if (defined $check->{error}) {
+        Misc::checkDisconnection($check);
         Cache::push($song)
     }
+
+    return $check;
 }
 
 sub reset {
@@ -186,6 +186,9 @@ package Cache;
 
 sub push {
     my $song = shift;
+
+    print "pushing $song->{title}\n";
+    sleep 5;
 
     open my $cache, ">>", $Cache;
     print $cache "$song->{title} ||| $song->{album} ||| $song->{artist} ||| $song->{length} ||| $song->{time}", "\n";
@@ -215,6 +218,8 @@ sub flush {
     my $number  = shift;
     my $counter = 0;
     my @songs;
+
+    print "flushing $number songs\n";
 
     open my $cache, "<", $Cache;
     while (<$cache>) {
@@ -247,10 +252,13 @@ sub submit {
         my $check = $LastFM->submit(@songs);
 
         if (defined $check->{error}) {
-            return $check;
+            Misc::checkDisconnection($check);
+        }
+        else {
+            flush(50);
         }
 
-        flush(50);
+        return $check;
     }
 }
 
@@ -268,4 +276,12 @@ Usage: LOLlastfm [options]
 -u user     : use the given username instead of the config one
 -p password : use the given password instead of the config one
 USAGE
+}
+
+sub checkDisconnection {
+    my $check = shift;
+
+    if (defined $check->{code} && $check->{code} == 500) {
+        $Handshake = { error => 'lol' };
+    }
 }

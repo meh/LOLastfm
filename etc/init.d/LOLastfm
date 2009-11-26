@@ -6,7 +6,7 @@ depend() {
 
 start() {
     ebegin "Starting LOLastfm"
-    start-stop-daemon --start --quiet --exec /usr/bin/LOLastfm --pidfile /tmp/LOLastfm.pid &
+    start-stop-daemon --start --quiet --exec "/usr/bin/LOLastfm" --make-pidfile --pidfile /tmp/LOLastfm.pid --background
     eend $?
 }
 

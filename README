@@ -6,3 +6,5 @@ cpan> install Net::LastFM::Submission
 --
 
 And then you can |make install| it (as root) :)
+
+LOLastfm -h for the options or use the etc/init.d/LOLastfm (only for Gentoo and runscript compliant distros)

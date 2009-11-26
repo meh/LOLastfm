@@ -187,13 +187,16 @@ sub reset {
 package Cache;
 
 sub push {
-    my $song = shift;
+    my $song      = shift;
 
-    print "pushing $song->{title}\n";
-    sleep 5;
+    my $separator = " _";
+    while ($song->{title} =~ /$separator / || $song->{album} =~ /$separator / || $song->{artist} =~ /$separator /) {
+        $separator .= "_";
+    }
+    $separator .= " ";
 
     open my $cache, ">>", $Cache;
-    print $cache "$song->{title} ||| $song->{album} ||| $song->{artist} ||| $song->{length} ||| $song->{time}", "\n";
+    print $cache "$separator: ", $song->{title}, $separator, $song->{album}, $separator, $song->{artist}, $separator, $song->{length}, $separator, $song->{time}, "\n";
     close $cache;
 }
 
@@ -204,9 +207,13 @@ sub get {
 
     open my $cache, "<", $Cache;
     while (<$cache>) {
-        my @data = split / \|\|\| /, $_;
-        CORE::push @songs, { title => $data[0], album => $data[1], artist => $data[2], length => $data[3], time => $data[4] };
+        my $line      = $_;
 
+        if ($line =~ m{^(.+): (.+)$}) {
+            my @data = split /$1/, $2;
+            CORE::push @songs, { title => $data[0], album => $data[1], artist => $data[2], length => $data[3], time => $data[4] };
+        }
+        
         if (++$counter >= $number) {
             last;
         }
@@ -220,8 +227,6 @@ sub flush {
     my $number  = shift;
     my $counter = 0;
     my @songs;
-
-    print "flushing $number songs\n";
 
     open my $cache, "<", $Cache;
     while (<$cache>) {

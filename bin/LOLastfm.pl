@@ -35,7 +35,7 @@ if ($options{h}) {
 my $Config = XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray => 0);
 my $Player = $options{P} || $Config->{player} || die "What player should I use?";
 my $Cache  = $options{c} || $Config->{cache} || '/var/lib/LOLastfm/cache.xml';
-my $As     = $options{a} || $Config->{as} || `whoami`;
+my $As     = $options{a} || $Config->{as};
 
 my $LastFM = new Net::LastFM::Submission(
     user     => $options{u} || $Config->{user},
@@ -86,10 +86,12 @@ our $NowPlaying = 0;
 
 sub get {
     my $output;
+    my $command;
     my $song = {};
 
     if ($Player eq 'moc') {
-        $output = `su -c "mocp -i" $As`;
+        $command = ($As ? "su -c 'mocp -i' $As" : "mocp -i");
+        $output  = `$command`;
 
         if ($output !~ /State: PLAY/) {
             return 0;

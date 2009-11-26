@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 
 <config>
-    <as>user</as>
+    <!-- Uncomment the line below if you use it as booting service or as root and put your set your username -->
+    <!-- <as>user</as> -->
 
     <user>xxxx</user>
     <password>yyyy</password>

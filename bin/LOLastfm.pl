@@ -42,8 +42,8 @@ my $LastFM = new Net::LastFM::Submission(
 
     enc => $options{E} || $Config->{encoding} || 'utf8',
 
-#    client_id  => 'LOLastfm',
-#    client_ver => $Version,
+    client_id  => 'lol',
+    client_ver => $Version,
 );
 
 my $Handshake = $LastFM->handshake();

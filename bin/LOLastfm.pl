@@ -1,5 +1,4 @@
 #! /usr/bin/perl
-#
 # meh. [http://meh.doesntexist.org]
 #
 # This program is free software: you can redistribute it and/or modify
@@ -17,7 +16,6 @@
 
 use strict;
 use warnings;
-use utf8;
 use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
@@ -25,7 +23,7 @@ use Net::LastFM::Submission;
 my $Version = '0.1';
 
 my %options;
-getopts('u:p:P:f:C:A:S:h', \%options);
+getopts('u:p:P:f:C:A:S:E:h', \%options);
 
 if ($options{h}) {
     print Misc::usage();
@@ -42,7 +40,7 @@ my $LastFM = new Net::LastFM::Submission(
     user     => $options{u} || $Config->{lastfm}->{user},
     password => $options{p} || $Config->{lastfm}->{password},
 
-    enc => 'utf8',
+    enc => $options{E} || $Config->{encoding} || 'utf8',
 
 #    client_id  => 'LOLastfm',
 #    client_ver => $Version,
@@ -216,7 +214,7 @@ sub get {
 
     open my $cache, "<", $Cache;
     while (<$cache>) {
-        my $line      = $_;
+        my $line = $_;
 
         if ($line =~ m{^(.+): (.+)$}) {
             my @data = split /$1/, $2;
@@ -302,6 +300,7 @@ Usage: LOLlastfm [options]
 -C cache    : use the given cache as caching file
 -P player   : use the given player as scrobbling one
 -S seconds  : sends the song as listened when you got past (songLength - seconds)
+-E encoding : encoding to automatically encode from, last.fm needs utf8 strings
 USAGE
 }
 

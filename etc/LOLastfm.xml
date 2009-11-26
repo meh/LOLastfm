@@ -16,6 +16,9 @@
     <!-- sends the song as listened when you got past (songLength - seconds) -->
     <seconds>20</seconds>
 
+    <!-- encoding to automatically encode from, last.fm needs utf8 strings -->
+    <encoding>utf8</encoding>
+
     <!-- path to the cache file, if no file is given it won't cache listenings -->
     <cache>/var/lib/LOLastfm/cache</cache>
 </config>

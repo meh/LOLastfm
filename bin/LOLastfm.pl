@@ -25,21 +25,22 @@ use Net::LastFM::Submission;
 my $Version = '0.1';
 
 my %options;
-getopts('u:p:P:f:c:a:h', \%options);
+getopts('u:p:P:f:C:A:S:h', \%options);
 
 if ($options{h}) {
     print Misc::usage();
     exit;
 }
 
-my $Config = XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray => 0);
-my $Player = $options{P} || $Config->{player} || die "What player should I use?";
-my $Cache  = $options{c} || $Config->{cache} || '/var/lib/LOLastfm/cache.xml';
-my $As     = $options{a} || $Config->{as};
+my $Config  = XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray => 0);
+my $Player  = $options{P} || $Config->{player} || die "What player should I use?";
+my $Cache   = $options{c} || $Config->{cache};
+my $As      = $options{a} || $Config->{as};
+my $Seconds = $options{S} || $Config->{seconds} || 20;
 
 my $LastFM = new Net::LastFM::Submission(
-    user     => $options{u} || $Config->{user},
-    password => $options{p} || $Config->{password},
+    user     => $options{u} || $Config->{lastfm}->{user},
+    password => $options{p} || $Config->{lastfm}->{password},
 
     enc => 'utf8',
 
@@ -55,7 +56,7 @@ while (1) {
     my $song = Song::get();
 
     if (!$song) {
-        if ($old->{seconds} >= $old->{length}-20) {
+        if ($old->{seconds} >= $old->{length} - $Seconds) {
             Song::submit($old);
             $old = Song::reset();
         }
@@ -67,7 +68,7 @@ while (1) {
             }
         }
         else {
-            if ($old->{seconds} >= $old->{length}-20) {
+            if ($old->{seconds} >= $old->{length} - $Seconds) {
                 Song::submit($old);
             }
 
@@ -187,7 +188,11 @@ sub reset {
 package Cache;
 
 sub push {
-    my $song      = shift;
+    my $song = shift;
+
+    if (!$Cache) {
+        return;
+    }
 
     my $separator = " _";
     while ($song->{title} =~ /$separator / || $song->{album} =~ /$separator / || $song->{artist} =~ /$separator /) {
@@ -204,6 +209,10 @@ sub get {
     my $number  = shift;
     my $counter = 0;
     my @songs;
+
+    if (!$Cache) {
+        return @songs;
+    }
 
     open my $cache, "<", $Cache;
     while (<$cache>) {
@@ -228,6 +237,10 @@ sub flush {
     my $counter = 0;
     my @songs;
 
+    if (!$Cache) {
+        return;
+    }
+
     open my $cache, "<", $Cache;
     while (<$cache>) {
         if (++$counter >= $number) {
@@ -245,6 +258,10 @@ sub flush {
 }
 
 sub submit {
+    if (!$Cache) {
+        return { status => 'OK' };
+    }
+
     if (defined $Handshake->{error}) {
         $Handshake = $LastFM->handshake();
     }
@@ -276,12 +293,15 @@ sub usage {
 Usage: LOLlastfm [options]
 
 -h          : show this help.
--a user     : execute the command as that user (eg: for mocp you have to be the user using it)
 -f file     : use the given file as config file
--c cache    : use the given cache as caching file
--P player   : use the given player as scrobbling one
+
 -u user     : use the given username instead of the config one
 -p password : use the given password instead of the config one
+
+-A user     : execute the command as that user (eg: for mocp you have to be the user using it)
+-C cache    : use the given cache as caching file
+-P player   : use the given player as scrobbling one
+-S seconds  : sends the song as listened when you got past (songLength - seconds)
 USAGE
 }
 

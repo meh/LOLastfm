@@ -4,10 +4,18 @@
     <!-- Uncomment the line below if you use it as booting service or as root and put your set your username -->
     <!-- <as>user</as> -->
 
-    <user>xxxx</user>
-    <password>yyyy</password>
+    <!-- last.fm login data -->
+    <lastfm>
+        <user>xxxx</user>
+        <password>yyyy</password>
+    </lastfm>
 
+    <!-- Players: moc -->
     <player>moc</player>
 
+    <!-- sends the song as listened when you got past (songLength - seconds) -->
+    <seconds>20</seconds>
+
+    <!-- path to the cache file, if no file is given it won't cache listenings -->
     <cache>/var/lib/LOLastfm/cache</cache>
 </config>

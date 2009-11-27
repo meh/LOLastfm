@@ -6,4 +6,3 @@ install:
 	mkdir -p /var/lib/LOLastfm
 	touch /var/lib/LOLastfm/cache
 	cp etc/LOLastfm.xml /etc
-	

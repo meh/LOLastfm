@@ -30,4 +30,8 @@ src_install() {
 	dodir /var/lib/LOLastfm/
 
 	dodoc README || die
+
+	ewarn "Remember to install from CPAN Net::LastFM::Submission."
+	ewarn ""
+	ewarn "If you use MPD install Audio::MPD too."
 }

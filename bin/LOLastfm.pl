@@ -460,6 +460,8 @@ package Misc;
 
 sub usage {
     return << "USAGE";
+LOLastfm $Version
+
 Usage: LOLlastfm [options]
 
 -h          : show this help.

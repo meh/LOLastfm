@@ -6,7 +6,7 @@ EAPI="2"
 
 DESCRIPTION="last.fm scrobbler for everything."
 HOMEPAGE="http://meh.doesntexist.org/#lolastfm"
-SRC_URI="http://cloud.github.com/downloads/meh/LOLastfm/LOLastfm-0.2.tar.bz2"
+SRC_URI="http://cloud.github.com/downloads/meh/LOLastfm/LOLastfm-${PV}.tar.lzma"
 
 LICENSE="GPL-3"
 SLOT="0"

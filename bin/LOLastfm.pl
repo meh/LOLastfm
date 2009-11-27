@@ -23,7 +23,7 @@ use Net::LastFM::Submission;
 my $Version = '0.2';
 
 my %options;
-getopts('u:p:P:f:C:S:E:h', \%options);
+getopts('u:p:f:C:P:S:T:E:h', \%options);
 
 if ($options{h}) {
     print Misc::usage();
@@ -31,10 +31,11 @@ if ($options{h}) {
 }
 
 my $Config  = XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray => 0);
-my $Player  = $options{P} || $Config->{player} || die "What player should I use?";
-my $Cache   = $options{c} || $Config->{cache};
-my $As      = $options{a} || $Config->{as};
+my $Cache   = $options{C} || $Config->{cache};
+my $Tick    = $options{T} || $Config->{tick} || 5;
 my $Seconds = $options{S} || $Config->{seconds} || 20;
+
+Player::init ($options{P} || $Config->{player});
 
 my $LastFM = new Net::LastFM::Submission(
     user     => $options{u} || $Config->{lastfm}->{user},
@@ -55,7 +56,7 @@ if (not defined $Handshake->{error}) {
 my $old = Song::reset();
 
 while (1) {
-    my $song = Song::get();
+    my $song = Player::currentSong();
 
     if (!$song) {
         if ($old->{seconds} >= $old->{length} - $Seconds) {
@@ -80,24 +81,12 @@ while (1) {
         $old = $song;
     }
 
-    sleep 5;
+    sleep $Tick;
 }
 
 package Song;
 
 our $NowPlaying = 0;
-
-sub get {
-    if ($Player eq 'moc') {
-        return Player::MOC::get();
-    }
-    elsif ($Player eq 'mpd') {
-        return Player::MPD::get();
-    }
-    else {
-        die "No supported player has been selected.";
-    }
-}
 
 sub nowPlaying {
     my $song  = shift;
@@ -245,11 +234,55 @@ sub submit {
     }
 }
 
+package Player;
+
+my $player;
+
+sub init {
+    $player = shift;
+
+    if ($player eq 'moc') {
+        if ($Config->{moc}->{as}) {
+            $Player::MOC::command = "su -c 'moc -i' $Config->{moc}->{as}";
+        }
+        else {
+            $Player::MOC::command = "moc -i";
+        }
+    }
+    elsif ($player eq 'mpd') {
+        use Audio::MPD;
+        $Player::MPD::connection = Player::MPD::newConnection();
+    }
+    elsif ($player eq 'mp3blaster') {
+        if (not defined $Config->{mp3blaster}->{statusFile}) {
+            die "You have to set a mp3blaster status file to use LOLastfm.";
+        }
+
+        $Player::MP3Blaster::statusFile = $Config->{mp3blaster}->{statusFile};
+    }
+    else {
+        die "No supported player has been selected.";
+    }
+}
+
+sub currentSong {
+    if ($player eq 'moc') {
+        return Player::MOC::currentSong();
+    }
+    elsif ($player eq 'mpd') {
+        return Player::MPD::currentSong();
+    }
+    elsif ($player eq 'mp3blaster') {
+        return Player::MP3Blaster::currentSong();
+    }
+}
+
 package Player::MOC;
 
-sub get {
+our $command;
+
+sub currentSong {
     my $song    = {};
-    my $command = ($Config->{moc}->{as}) ? "su -c 'mocp -i' $Config->{moc}->{as}" : "mocp -i";
     my $output  = `$command`;
 
     if ($output !~ /State: PLAY/) {
@@ -304,25 +337,30 @@ sub get {
 
 package Player::MPD;
 
-my $connection = newConnection();
+our $connection;
 
 sub newConnection {
-    use Audio::MPD;
+    my $options = {};
 
-    return new Audio::MPD({
-        host => $Config->{mpd}->{host} || undef,
-        port => $Config->{mpd}->{port} || undef,
+    if (defined $Config->{mpd}->{host}) {
+        $options->{host} = $Config->{mpd}->{host};
+    }
+    if (defined $Config->{mpd}->{port}) {
+        $options->{port} = $Config->{mpd}->{port};
+    }
+    if (defined $Config->{mpd}->{user}) {
+        $options->{user} = $Config->{mpd}->{user};
+    }
+    if (defined $Config->{mpd}->{password}) {
+        $options->{password} = $Config->{mpd}->{password};
+    }
 
-        user     => $Config->{mpd}->{user} || undef,
-        password => $Config->{mpd}->{password} || undef,
-    
-        conntype => 'reuse',
-    });
+    $options->{conntype} = 'reuse';
+
+    return new Audio::MPD($options);
 }
 
-sub get {
-    use Audio::MPD;
-
+sub currentSong {
     my $song = {};
 
     if (!$connection->ping()) {
@@ -331,24 +369,89 @@ sub get {
 
     my $mpdState = $connection->status();
 
-    if ($mpdState->{state} != 'play') {
+    if (not $mpdState->{state} eq 'play') {
         return 0;
     }
 
     my $mpdSong = $connection->current();
 
-    $song->{title}   = $mpdSong->{title};
-    $song->{artist}  = $mpdSong->{artist};
+    $song->{title}   = $mpdSong->title();
+    $song->{artist}  = $mpdSong->artist();
 
     if (!$song->{title} && !$song->{artist}) {
         return 0;
     }
 
-    $song->{album}   = $mpdSong->{album};
-    $song->{seconds} = $mpdState->{time}->{seconds_sofar};
-    $song->{length}  = $mpdSong->{time};
-    $song->{id}      = $mpdSong->{track};
+    $song->{album}   = $mpdSong->album();
+    $song->{seconds} = $mpdState->time()->seconds_sofar();
+    $song->{length}  = $mpdSong->time();
+    $song->{id}      = $mpdSong->track();
     $song->{source}  = 'P';
+
+    return $song;
+}
+
+package Player::MP3Blaster;
+
+our $statusFile;
+
+sub currentSong {
+    my $song = {};
+
+    if (not -e $statusFile) {
+        return 0;
+    }
+
+    open my $file, "<", $statusFile;
+    my @lines = <$file>;
+    close $file;
+
+    my $output = join '', @lines;
+
+    if ($output !~ m{^status playing}m) {
+        return 0;
+    }
+
+    if ($output =~ m{^title (.*)$}m) {
+        $song->{title} = $1;
+    }
+    else {
+        $song->{title} = '';
+    }
+
+    if ($output =~ m{^artist (.*)$}m) {
+        $song->{artist} = $1;
+    }
+    else {
+        $song->{artist} = '';
+    }
+
+    if (!$song->{title} && !$song->{artist}) {
+        return 0;
+    }
+
+    if ($output =~ m{^album (.*)$}m) {
+        $song->{album} = $1;
+    }
+    else {
+        $song->{album} = '';
+    }
+
+    if ($output =~ m{^length (.*)$}m) {
+        $song->{length} = $1;
+
+        if ($old->{title} eq $song->{title} && $old->{album} eq $song->{album} && $old->{artist} eq $song->{artist}) {
+            $song->{seconds} = $old->{seconds} + $Tick;
+        }
+        else {
+            $song->{seconds} = 0;
+        }
+
+        $song->{time} = time() - $song->{length};
+    }
+    else {
+        return 0;
+    }
 
     return $song;
 }
@@ -368,6 +471,7 @@ Usage: LOLlastfm [options]
 -C cache    : use the given cache as caching file
 -P player   : use the given player as scrobbling one
 -S seconds  : sends the song as listened when you got past (songLength - seconds)
+-T tick     : check informations again every tick seconds
 -E encoding : encoding to automatically encode from, last.fm needs utf8 strings
 USAGE
 }

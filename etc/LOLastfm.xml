@@ -7,8 +7,11 @@
         <password>yyyy</password>
     </lastfm>
 
-    <!-- Players: moc -->
+    <!-- Players: moc, mpd, mp3blaster -->
     <player>moc</player>
+
+    <!-- Check informations again every tick seconds -->
+    <tick>5</tick>
 
     <!-- Sends the song as listened when you got past (songLength - seconds) -->
     <seconds>20</seconds>
@@ -34,4 +37,11 @@
         <!-- <user></user> -->
         <!-- <password><password> -->
     </mpd>
+
+    <!-- mp3blaster updates the status file only when the song is changed so I can't get the current elapsed seconds -->
+    <!-- so don't be too strict with tick and seconds because I assume the elapsed seconds with ticks :)             -->
+    <mp3blaster>
+        <!-- Uncomment and set to the proper path -->
+        <!-- <statusFile>/tmp/mp3blaster-state</statusFile> -->
+    </mp3blaster>
 </config>

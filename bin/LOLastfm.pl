@@ -243,10 +243,10 @@ sub init {
 
     if ($player eq 'moc') {
         if ($Config->{moc}->{as}) {
-            $Player::MOC::command = "su -c 'moc -i' $Config->{moc}->{as}";
+            $Player::MOC::command = "su -c 'mocp -i' $Config->{moc}->{as}";
         }
         else {
-            $Player::MOC::command = "moc -i";
+            $Player::MOC::command = "mocp -i";
         }
     }
     elsif ($player eq 'mpd') {

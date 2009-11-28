@@ -3,6 +3,7 @@ lololololololol last.fm
 --
 # perl -MCPAN -e shell
 cpan> install Net::LastFM::Submission
+cpan> install XML::Simple
 --
 
 And then you can |make install| it (as root) :)

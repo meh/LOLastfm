@@ -20,9 +20,7 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
-use Data::Dumper;
-
-my $Version = '0.3.1';
+my $Version = '0.3.2';
 
 my %options;
 getopts('hf:s:u:p:C:P:S:T:E:', \%options);
@@ -34,7 +32,7 @@ if ($options{h}) {
 
 my $Config  = XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray => [ 'service' ]);
 my $Cache   = $options{C} || $Config->{cache};
-my $Tick    = $options{T} || $Config->{tick} || 6;
+my $Tick    = $options{T} || $Config->{tick} || 5;
 my $Seconds = $options{S} || $Config->{seconds} || 20;
 
 Player::init ($options{P} || $Config->{player});
@@ -43,9 +41,16 @@ if (defined $options{s} || defined $Config->{services}) {
     Services::init($options{s} || $Config->{services});
 }
 
+my $User     = $options{u} || $Config->{lastfm}->{user};
+my $Password = $options{p} || $Config->{lastfm}->{password};
+
+if (not defined $User || not defined $Password) {
+    die "User or password were missing.";
+}
+
 my $LastFM = new Net::LastFM::Submission(
-    user     => $options{u} || $Config->{lastfm}->{user},
-    password => $options{p} || $Config->{lastfm}->{password},
+    user     => $User,
+    password => $Password,
 
     enc => $options{E} || $Config->{encoding} || 'utf8',
 
@@ -256,29 +261,22 @@ sub submit {
 
 package Player;
 
-my $player;
+my $function;
 
 sub init {
-    $player = shift;
+    my $player = shift;
 
     if ($player eq 'moc') {
-        if ($Config->{moc}->{as}) {
-            $Player::MOC::command = "su -c 'mocp -i' $Config->{moc}->{as}";
-        }
-        else {
-            $Player::MOC::command = "mocp -i";
-        }
+        Player::MOC::init();
+        $function = \&Player::MOC::currentSong;
     }
     elsif ($player eq 'mpd') {
-        use Audio::MPD;
-        $Player::MPD::connection = Player::MPD::newConnection();
+        Player::MPD::init();
+        $function = \&Player::MPD::currentSong;
     }
     elsif ($player eq 'mp3blaster') {
-        if (not defined $Config->{mp3blaster}->{statusFile}) {
-            die "You have to set a mp3blaster status file to use LOLastfm.";
-        }
-
-        $Player::MP3Blaster::statusFile = $Config->{mp3blaster}->{statusFile};
+        Player::MP3Blaster::init();
+        $function = \&Player::MP3Blaster::currentSong;
     }
     else {
         die "No supported player has been selected.";
@@ -286,20 +284,21 @@ sub init {
 }
 
 sub currentSong {
-    if ($player eq 'moc') {
-        return Player::MOC::currentSong();
-    }
-    elsif ($player eq 'mpd') {
-        return Player::MPD::currentSong();
-    }
-    elsif ($player eq 'mp3blaster') {
-        return Player::MP3Blaster::currentSong();
-    }
+    return &$function();
 }
 
 package Player::MOC;
 
-our $command;
+my $command;
+
+sub init {
+    if ($Config->{moc}->{as}) {
+        $command = "su -c 'mocp -i' $Config->{moc}->{as}";
+    }
+    else {
+        $command = "mocp -i";
+    }
+}
 
 sub currentSong {
     my $song    = {};
@@ -360,7 +359,13 @@ sub currentSong {
 
 package Player::MPD;
 
-our $connection;
+my $connection;
+
+sub init {
+    use Audio::MPD;
+
+    $connection = newConnection();
+}
 
 sub newConnection {
     my $options = {};
@@ -401,8 +406,8 @@ sub currentSong {
 
     my $mpdSong = $connection->current();
 
-    $song->{title}   = $mpdSong->title();
-    $song->{artist}  = $mpdSong->artist();
+    $song->{title}  = $mpdSong->title();
+    $song->{artist} = $mpdSong->artist();
 
     if (!$song->{title} && !$song->{artist}) {
         return 0;
@@ -419,7 +424,15 @@ sub currentSong {
 
 package Player::MP3Blaster;
 
-our $statusFile;
+my $statusFile;
+
+sub init {
+    if (not defined $Config->{mp3blaster}->{statusFile}) {
+        die "You have to set a mp3blaster status file to use LOLastfm.";    
+    }
+
+    $statusFile = $Config->{mp3blaster}->{statusFile};
+}
 
 sub currentSong {
     my $song = {};
@@ -530,8 +543,7 @@ sub dispatcher {
 }
 
 sub dispatch {
-    my $socket = shift;
-
+    my $socket  = shift;
     my $service = <$socket>;
 
     if (not defined $service) {
@@ -556,8 +568,7 @@ package Services::Current;
 
 sub exec {
     my $socket = shift;
-
-    my $song = Player::currentSong();
+    my $song   = Player::currentSong();
 
     if (!$song) {
         print $socket 'null', "\n";
@@ -574,7 +585,23 @@ sub exec {
     my $data   = shift;
 
     my $song = JSON::from_json($data, { utf8 => 1 });
-    Song::submit($song);
+
+    if (defined $song->{user} && defined $song->{password}) {
+        my $lastfm = new Net::LastFM::Submission(
+            user     => $song->{user},
+            password => $song->{password},
+
+            enc => $options{E} || $Config->{encoding} || 'utf8',
+
+            client_id  => 'lol',
+            client_ver => $Version,
+        );
+        $lastfm->handshake();
+        $lastfm->submit($song);
+    }
+    else {
+        Song::submit($song);
+    }
 }
 
 package Misc;

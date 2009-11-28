@@ -469,18 +469,17 @@ sub currentSong {
 
 package Services;
 
-my $services = {};
+my $Services = {};
 
 sub init {
     use threads;
-    use IO::Socket;
 
     my $enable = shift;
 
     if (ref $enable eq 'HASH') {
         if (defined $enable->{service}) {
             for my $service (@{$enable->{service}}) {
-                $services->{$service->{name}} = 1;
+                $Services->{$service->{name}} = 1;
             }
         }
     }
@@ -488,13 +487,20 @@ sub init {
         my @services = split /\s*,\s*/, $enable;
 
         for my $service (@services) {
-            $services->{$service} = 1;
+            $Services->{$service} = 1;
         }
     }
 
-    if (defined $services->{current}) {
+    if (defined $Services->{current}) {
         Services::Current::init();
     }
+
+    my $thread = new threads(\&dispatcher);
+    $thread->detach();
+}
+
+sub dispatcher {
+    use IO::Socket;
 
     my $socket = new IO::Socket::INET(
         LocalHost => $Config->{services}->{host} || '127.0.0.1',
@@ -505,17 +511,24 @@ sub init {
 
     my $connection;
     while (($connection = $socket->accept())) {
-        my $thread = new threads(\&dispatcher, $connection);
+        my $thread = new threads(\&dispatch, $connection);
         $thread->detach();
     }
 }
 
-sub dispatcher {
+sub dispatch {
     my $socket = shift;
 
     my $service = <$socket>;
 
-    if ($service eq 'current') {
+    if (not defined $service) {
+        close $socket;
+        return;
+    }
+
+    chomp $service;
+
+    if ($service eq 'current' && defined $Services->{current}) {
         Services::Current::exec($socket);
     }
 

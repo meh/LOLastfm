@@ -22,7 +22,7 @@ use Net::LastFM::Submission;
 
 use Data::Dumper;
 
-my $Version = '0.2.2';
+my $Version = '0.3';
 
 my %options;
 getopts('hf:s:u:p:C:P:S:T:E:', \%options);

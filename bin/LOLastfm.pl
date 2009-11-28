@@ -296,7 +296,10 @@ sub currentSong {
     my $song    = {};
     my $output  = `$command`;
 
-    if ($output !~ m{State: (PLAY|PAUSE)}) {
+    if ($output =~ m{State: (PLAY|PAUSE)}) {
+        $song->{state} = lc $1;
+    }
+    else {
         return 0;
     }
 
@@ -380,7 +383,10 @@ sub currentSong {
 
     my $mpdState = $connection->status();
 
-    if ($mpdState->{state} !~ m{(play|pause)}) {
+    if ($mpdState->{state} =~ m{(play|pause)}) {
+        $song->{state} = $1;
+    }
+    else {
         return 0;
     }
 
@@ -419,7 +425,10 @@ sub currentSong {
 
     my $output = join '', @lines;
 
-    if ($output !~ m{^status (playing|paused)}m) {
+    if ($output =~ m{^status ((play)ing|(pause)d)}m) {
+        $song->{state} = $2;
+    }
+    else {
         return 0;
     }
 
@@ -528,8 +537,8 @@ sub dispatch {
 
     chomp $service;
 
-    if ($service eq 'current' && defined $Services->{current}) {
-        Services::Current::exec($socket);
+    if ($service =~ /^current(\s+(.*)|)$/ && defined $Services->{current}) {
+        Services::Current::exec($socket, $1);
     }
 
     close $socket;

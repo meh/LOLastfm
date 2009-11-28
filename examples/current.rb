@@ -5,8 +5,14 @@ require 'json'
 socket = TCPSocket.open('127.0.0.1', 9001)
 socket.print "current\n"
 
-song = JSON.parse(socket.gets)
+song = socket.gets
 socket.close()
+
+if (song == 'null')
+    exit
+end
+
+song = JSON.parse(song)
 
 if (!song['id'].empty?)
     print "%s - " % song['id']

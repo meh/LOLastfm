@@ -20,7 +20,9 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
-my $Version = '0.2';
+use Data::Dumper;
+
+my $Version = '0.2.1';
 
 my %options;
 getopts('u:p:f:C:P:S:T:E:h', \%options);
@@ -89,10 +91,15 @@ package Song;
 our $NowPlaying = 0;
 
 sub nowPlaying {
+    if (defined $Handshake->{error}) {
+        $Handshake = $LastFM->handshake();
+    }
+
     my $song  = shift;
     my $check = $LastFM->now_playing($song);
 
     if (defined $check->{error}) {
+        Misc::checkDisconnection($check);
         $NowPlaying = 0;
     }
     else {
@@ -481,7 +488,11 @@ USAGE
 sub checkDisconnection {
     my $check = shift;
 
-    if (defined $check->{code} && $check->{code} == 500) {
-        $Handshake = { error => 'lol' };
+    if ((defined $check->{code} && $check->{code} == 500) || (defined $check->{reason} && $check->{reason} =~ /handshake/)) {
+        $Handshake = {
+            reason => "Can't connect to post.audioscrobbler.com:80 (connect: timeout)",
+            error  => "500",
+            code   => 500,
+        };
     }
 }

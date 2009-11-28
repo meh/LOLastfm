@@ -11,7 +11,7 @@ SRC_URI="http://github.com/meh/LOLastfm/tarball/LOLastfm-${PV}"
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="amd64 x86"
-IUSE=""
+IUSE="+services"
 
 DEPEND="
 services? ( >=dev-lang/perl-5.8.1[ithreads] )

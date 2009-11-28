@@ -9,12 +9,9 @@ my $socket = new IO::Socket::INET(
     PeerPort => 9001
 );
 
-my $song;
-while (<$socket>) {
-    $song = $_;
-    close $socket;
-    last;
-}
+print $socket 'current', "\n";
+my $song = <$socket>;
+close $socket;
 
 my $json = new JSON()->allow_nonref(1);
 $song    = $json->decode($song, { utf8 => 1 });

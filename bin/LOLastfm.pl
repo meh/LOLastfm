@@ -494,6 +494,31 @@ sub init {
     if (defined $services->{current}) {
         Services::Current::init();
     }
+
+    my $socket = new IO::Socket::INET(
+        LocalHost => '127.0.0.1',
+        LocalPort => $Config->{services}->{port} || 9001,
+        Listen    => SOMAXCONN,
+        Reuse     => 1
+    );
+
+    my $connection;
+    while (($connection = $socket->accept())) {
+        my $thread = new thread(\&dispatcher, $connection);
+        $thread->detach();
+    }
+}
+
+sub dispatcher {
+    my $socket = shift;
+
+    my $service = <$socket>;
+
+    if ($service eq 'current') {
+        Services::Current::exec($socket);
+    }
+
+    close $socket;
 }
 
 package Services::Current;
@@ -501,30 +526,9 @@ package Services::Current;
 sub init {
     use IO::Socket;
     use JSON;
-
-    my $dispatch = new threads(\&dispatcher);
-    $dispatch->detach();
 }
 
-sub dispatcher {
-    my $conf = (grep { name => 'current' }, @{$Config->{services}->{service}})[0];
-
-    my $socket = new IO::Socket::INET(
-        LocalHost => '127.0.0.1',
-        LocalPort => $conf->{port} || 9001,
-        Listen    => SOMAXCONN,
-        Reuse     => 1
-    );
-
-    my $connection;
-
-    while (($connection = $socket->accept())) {
-        my $thread = new threads(\&answer, $connection);
-        $thread->detach();
-    }
-}
-
-sub answer {
+sub exec {
     my $socket = shift;
 
     my $song = Player::currentSong();
@@ -535,8 +539,6 @@ sub answer {
     else {
         print $socket to_json(Player::currentSong()), "\n";
     }
-
-    close $socket;
 }
 
 package Misc;

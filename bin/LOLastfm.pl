@@ -569,7 +569,7 @@ sub usage {
     return << "USAGE";
 LOLastfm $Version
 
-Usage: LOLlastfm [options]
+Usage: LOLastfm [options]
 
 -h          : show this help.
 -f file     : use the given file as config file

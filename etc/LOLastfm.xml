@@ -9,7 +9,7 @@
 
     <!-- If you want to enable services uncomment the part below -->
     <!--
-    <services>
+    <services port="9001" host="localhost">
         <service name="current"/>
     </services>
     -->

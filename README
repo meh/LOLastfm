@@ -1,9 +1,5 @@
 lololololololol last.fm
 
-From 0.3 you need Perl supporting threads if you want to use some functions.
-
-Those functions are optional anyway so if you don't need them don't worry.
-
 --
 # perl -MCPAN -e shell
 cpan> install Net::LastFM::Submission
@@ -21,4 +17,6 @@ cpan> install Audio::MPD
 
 Services:
 
-current - this service permits to get current song informations through sockets at a given port, needs IO::Socket and JSON to be installed.
+To use services you need a supporting threads Perl and IO::Socket to be installed.
+
+current - this service permits to get current song informations through sockets at a given port, needs JSON to be installed.

@@ -473,6 +473,7 @@ my $services = {};
 
 sub init {
     use threads;
+    use IO::Socket;
 
     my $enable = shift;
 
@@ -496,7 +497,7 @@ sub init {
     }
 
     my $socket = new IO::Socket::INET(
-        LocalHost => '127.0.0.1',
+        LocalHost => $Config->{services}->{host} || '127.0.0.1',
         LocalPort => $Config->{services}->{port} || 9001,
         Listen    => SOMAXCONN,
         Reuse     => 1
@@ -524,7 +525,6 @@ sub dispatcher {
 package Services::Current;
 
 sub init {
-    use IO::Socket;
     use JSON;
 }
 

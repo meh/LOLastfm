@@ -20,22 +20,28 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
-my $Version = '0.2.1';
+use Data::Dumper;
+
+my $Version = '0.2.2';
 
 my %options;
-getopts('u:p:f:C:P:S:T:E:h', \%options);
+getopts('hf:s:u:p:C:P:S:T:E:', \%options);
 
 if ($options{h}) {
     print Misc::usage();
     exit;
 }
 
-my $Config  = XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray => 0);
+my $Config  = XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray => [ 'service' ]);
 my $Cache   = $options{C} || $Config->{cache};
-my $Tick    = $options{T} || $Config->{tick} || 5;
+my $Tick    = $options{T} || $Config->{tick} || 6;
 my $Seconds = $options{S} || $Config->{seconds} || 20;
 
 Player::init ($options{P} || $Config->{player});
+
+if (defined $options{s} || defined $Config->{services}) {
+    Services::init($options{s} || $Config->{services});
+}
 
 my $LastFM = new Net::LastFM::Submission(
     user     => $options{u} || $Config->{lastfm}->{user},
@@ -290,7 +296,7 @@ sub currentSong {
     my $song    = {};
     my $output  = `$command`;
 
-    if ($output !~ /State: PLAY/) {
+    if ($output !~ m{State: (PLAY|PAUSE)}) {
         return 0;
     }
 
@@ -374,7 +380,7 @@ sub currentSong {
 
     my $mpdState = $connection->status();
 
-    if (not $mpdState->{state} eq 'play') {
+    if ($mpdState->{state} !~ m{(play|pause)}) {
         return 0;
     }
 
@@ -413,7 +419,7 @@ sub currentSong {
 
     my $output = join '', @lines;
 
-    if ($output !~ m{^status playing}m) {
+    if ($output !~ m{^status (playing|paused)}m) {
         return 0;
     }
 
@@ -461,6 +467,78 @@ sub currentSong {
     return $song;
 }
 
+package Services;
+
+my $services = {};
+
+sub init {
+    use threads;
+
+    my $enable = shift;
+
+    if (ref $enable eq 'HASH') {
+        if (defined $enable->{service}) {
+            for my $service (@{$enable->{service}}) {
+                $services->{$service->{name}} = 1;
+            }
+        }
+    }
+    else {
+        my @services = split /\s*,\s*/, $enable;
+
+        for my $service (@services) {
+            $services->{$service} = 1;
+        }
+    }
+
+    if (defined $services->{current}) {
+        Services::Current::init();
+    }
+}
+
+package Services::Current;
+
+sub init {
+    use IO::Socket;
+    use JSON;
+
+    my $dispatch = new threads(\&dispatcher);
+    $dispatch->detach();
+}
+
+sub dispatcher {
+    my $conf = (grep { name => 'current' }, @{$Config->{services}->{service}})[0];
+
+    my $socket = new IO::Socket::INET(
+        LocalHost => '127.0.0.1',
+        LocalPort => $conf->{port} || 9001,
+        Listen    => SOMAXCONN,
+        Reuse     => 1
+    );
+
+    my $connection;
+
+    while (($connection = $socket->accept())) {
+        my $thread = new threads(\&answer, $connection);
+        $thread->detach();
+    }
+}
+
+sub answer {
+    my $socket = shift;
+
+    my $song = Player::currentSong();
+
+    if (!$song) {
+        print $socket 'null', "\n";
+    }
+    else {
+        print $socket to_json(Player::currentSong()), "\n";
+    }
+
+    close $socket;
+}
+
 package Misc;
 
 sub usage {
@@ -471,6 +549,7 @@ Usage: LOLlastfm [options]
 
 -h          : show this help.
 -f file     : use the given file as config file
+-s services : enable the passed services (needs a threads enabled Perl version)
 
 -u user     : use the given username instead of the config one
 -p password : use the given password instead of the config one

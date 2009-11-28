@@ -7,6 +7,13 @@
         <password>yyyy</password>
     </lastfm>
 
+    <!-- If you want to enable services uncomment the part below -->
+    <!--
+    <services>
+        <service name="current"/>
+    </services>
+    -->
+
     <!-- Players: moc, mpd, mp3blaster -->
     <player>moc</player>
 

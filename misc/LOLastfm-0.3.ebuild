@@ -14,13 +14,18 @@ KEYWORDS="amd64 x86"
 IUSE=""
 
 DEPEND="
-services? (>=dev-lang/perl-5.8.1[ithreads])
-!services? (dev-lang/perl)
+services? ( >=dev-lang/perl-5.8.1[ithreads] )
+!services? ( dev-lang/perl )
 "
 RDEPEND="${DEPEND}"
 
+src_unpack() {
+	cd ${WORKDIR}
+	tar xfv ${DISTDIR}/${P}
+}
+
 src_install() {
-	cd ${WORKDIR}/${P}
+	cd ${WORKDIR}/$(ls)
 
 	mv bin/LOLastfm.pl LOLastfm
 	dobin LOLastfm

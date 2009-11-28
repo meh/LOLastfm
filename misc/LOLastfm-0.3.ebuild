@@ -4,6 +4,8 @@
 
 EAPI="2"
 
+RESTRICT="primaryuri"
+
 DESCRIPTION="last.fm scrobbler for everything."
 HOMEPAGE="http://meh.doesntexist.org/#lolastfm"
 SRC_URI="http://github.com/meh/LOLastfm/tarball/LOLastfm-${PV}"

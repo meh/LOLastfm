@@ -505,7 +505,7 @@ sub init {
 
     my $connection;
     while (($connection = $socket->accept())) {
-        my $thread = new thread(\&dispatcher, $connection);
+        my $thread = new threads(\&dispatcher, $connection);
         $thread->detach();
     }
 }

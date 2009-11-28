@@ -17,6 +17,6 @@ cpan> install Audio::MPD
 
 Services:
 
-To use services you need a supporting threads Perl and IO::Socket to be installed.
+To use services you need a supporting threads Perl, IO::Socket and JSON to be installed.
 
-current - this service permits to get current song informations through sockets at a given port, needs JSON to be installed.
+current - this service permits to get current song informations.

@@ -16,6 +16,10 @@ close $socket;
 my $json = new JSON()->allow_nonref(1);
 $song    = $json->decode($song, { utf8 => 1 });
 
+if ($song->{state} eq 'pause') {
+    print "PAUSED. ";
+}
+
 if ($song->{id}) {
     print "$song->{id} - ";
 }

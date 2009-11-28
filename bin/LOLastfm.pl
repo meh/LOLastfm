@@ -22,7 +22,7 @@ use Net::LastFM::Submission;
 
 use Data::Dumper;
 
-my $Version = '0.3';
+my $Version = '0.3.1';
 
 my %options;
 getopts('hf:s:u:p:C:P:S:T:E:', \%options);
@@ -71,8 +71,16 @@ while (1) {
         }
     }
     else {
-        if ($old->{title} eq $song->{title} && $old->{album} eq $song->{album} && $old->{artist} eq $song->{artist} && $old->{seconds} < $song->{seconds}) {
-            if (not $Song::NowPlaying) {
+        if ($song->{state} eq 'pause' || ($old->{title} eq $song->{title} && $old->{album} eq $song->{album} && $old->{artist} eq $song->{artist} && $old->{seconds} < $song->{seconds})) {
+            if (!$Song::Paused && $song->{state} eq 'pause') {
+                $Song::Paused = 1;
+            }
+
+            if ($Song::Paused && $song->{state} eq 'play' || !$Song::NowPlaying) {
+                if ($Song::Paused) {
+                    $Song::Paused = 0;
+                }
+
                 Song::nowPlaying($song);
             }
         }
@@ -93,6 +101,7 @@ while (1) {
 package Song;
 
 our $NowPlaying = 0;
+our $Paused     = 0;
 
 sub nowPlaying {
     if (defined $Handshake->{error}) {
@@ -488,20 +497,14 @@ sub init {
     if (ref $enable eq 'HASH') {
         if (defined $enable->{service}) {
             for my $service (@{$enable->{service}}) {
-                $Services->{$service->{name}} = 1;
+                if ($service->{name} eq 'current') {
+                    $Services->{$service->{name}} = \&Services::Current::exec;
+                }
+                elsif ($service->{name} eq 'submit') {
+                    $Services->{$service->{name}} = \&Services::Submit::exec;
+                }
             }
         }
-    }
-    else {
-        my @services = split /\s*,\s*/, $enable;
-
-        for my $service (@services) {
-            $Services->{$service} = 1;
-        }
-    }
-
-    if (defined $Services->{current}) {
-        Services::Current::init();
     }
 
     my $thread = new threads(\&dispatcher);
@@ -510,6 +513,7 @@ sub init {
 
 sub dispatcher {
     use IO::Socket;
+    use JSON;
 
     my $socket = new IO::Socket::INET(
         LocalHost => $Config->{services}->{host} || '127.0.0.1',
@@ -536,19 +540,19 @@ sub dispatch {
     }
 
     chomp $service;
+    if ($service =~ /^(.+?)(\s+(.*)|)$/) {
+        my $service = $1;
+        my $data    = $3;
 
-    if ($service =~ /^current(\s+(.*)|)$/ && defined $Services->{current}) {
-        Services::Current::exec($socket, $1);
+        if (defined $Services->{$service}) {
+            $Services->{$service}($socket, $data);
+        }
     }
 
     close $socket;
 }
 
 package Services::Current;
-
-sub init {
-    use JSON;
-}
 
 sub exec {
     my $socket = shift;
@@ -559,8 +563,18 @@ sub exec {
         print $socket 'null', "\n";
     }
     else {
-        print $socket to_json(Player::currentSong()), "\n";
+        print $socket JSON::to_json(Player::currentSong()), "\n";
     }
+}
+
+package Services::Submit;
+
+sub exec {
+    my $socket = shift;
+    my $data   = shift;
+
+    my $song = JSON::from_json($data, { utf8 => 1 });
+    Song::submit($song);
 }
 
 package Misc;
@@ -573,7 +587,6 @@ Usage: LOLastfm [options]
 
 -h          : show this help.
 -f file     : use the given file as config file
--s services : enable the passed services (needs a threads enabled Perl version)
 
 -u user     : use the given username instead of the config one
 -p password : use the given password instead of the config one

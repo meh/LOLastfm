@@ -12,6 +12,7 @@
     <services port="9001" host="localhost">
         <service name="current"/>
         <service name="submit"/>
+        <service name="change"/>
     </services>
     -->
 

@@ -1,0 +1,26 @@
+#! /bin/sh
+
+case "$1" in
+    start)
+        echo "Starting LOLastfm..."
+        LOLastfm &> /dev/null &
+        PID=$$
+        echo $PID > /tmp/LOLastfm.pid
+    ;;
+
+    stop)
+        echo "Stopping LOLastfm..."
+        kill `cat /tmp/LOLastfm.pid` &> /dev/null
+    ;;
+
+    restart)
+        $0 stop
+        $0 start
+    ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+    ;;
+esac
+
+exit 0

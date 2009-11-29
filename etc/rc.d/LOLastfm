@@ -2,15 +2,19 @@
 
 case "$1" in
     start)
+        if [ -e /tmp/LOLastfm.pid ]; then
+            echo "LOLastfm is already started.";
+        fi
+
         echo "Starting LOLastfm..."
         LOLastfm &> /dev/null &
-        PID=$$
-        echo $PID > /tmp/LOLastfm.pid
+        echo $$ > /tmp/LOLastfm.pid
     ;;
 
     stop)
         echo "Stopping LOLastfm..."
         kill `cat /tmp/LOLastfm.pid` &> /dev/null
+        rm /tmp/LOLastfm.pid
     ;;
 
     restart)

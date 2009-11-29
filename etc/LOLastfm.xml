@@ -52,4 +52,12 @@
         <!-- Uncomment and set to the proper path -->
         <!-- <statusFile>/tmp/mp3blaster-state</statusFile> -->
     </mp3blaster>
+    
+    <!-- What a typo prone name :| -->
+    <rhythmbox>
+        <!-- Uncomment the line below if you use it as booting service or as root and put your set your username -->
+        <!-- because running mocp with another user would run another moc daemon and LOLastfm wouldn't get the   -->
+        <!-- needed informations.                                                                                -->
+        <!-- <as>user</as> -->
+    </rhythmbox>
 </config>

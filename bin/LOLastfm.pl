@@ -317,6 +317,9 @@ sub init {
     elsif ($player eq 'mp3blaster') {
         Player::MP3Blaster::init();
     }
+    elsif ($player eq 'rhythmbox') {
+        Player::Rhythmbox::init();
+    }
     else {
         die "No supported player has been selected.";
     }
@@ -336,6 +339,9 @@ sub getFunction {
     elsif ($player eq 'mp3blaster') {
         return \&Player::MP3Blaster::currentSong;
     }
+    elsif ($player eq 'rhythmbox') {
+        return \&Player::Rhythmbox::currentSong;
+    }
     else {
         return undef;
     }
@@ -347,20 +353,19 @@ sub currentSong {
 
 package Player::MOC;
 
-my $command;
+my $mocp;
 
 sub init {
+    $mocp = 'mocp -i';
+
     if ($Config->{moc}->{as}) {
-        $command = "su -c 'mocp -i' $Config->{moc}->{as}";
-    }
-    else {
-        $command = "mocp -i";
+        $mocp = "su -c '$mocp' $Config->{moc}->{as}";
     }
 }
 
 sub currentSong {
     my $song    = {};
-    my $output  = `$command`;
+    my $output  = `$mocp`;
 
     if ($output =~ m{State: (PLAY|PAUSE)}) {
         $song->{state} = lc $1;
@@ -552,6 +557,87 @@ sub currentSong {
     else {
         return 0;
     }
+
+    return $song;
+}
+
+package Player::Rhythmbox;
+
+my $rhythmbox;
+
+sub init {
+    $rhythmbox = 'rhythmbox-client --print-playing-format " _ : %tn _ %tt _ %ta _ %at _ %te _ %td"';
+
+    if ($Config->{rhythmbox}->{as}) {
+        $rhythmbox = "su -c '$rhythmbox' $Config->{rhythmbox}->{as}";
+    }
+}
+
+sub currentSong {
+    my $song = {};
+    my $output;
+    my @data;
+    
+    my $replace = $rhythmbox;
+    while (1) {
+        $output = `$replace`;
+
+        if ($output =~ m{^(.*): (.*)$}) {
+            my $separator = $1;
+
+            @data = split /$separator/, $2;
+            if ($#data == 5) {
+                last;
+            }
+
+            $separator =~ m{^ ([_]+) $};
+            $separator = $1;
+            $replace   =~ s/ $separator / ${separator}_ /g;
+        }
+        else {
+            return 0;
+        }
+    }
+
+    $song->{id}     = $data[0];
+    $song->{title}  = $data[1];
+    $song->{artist} = $data[2];
+
+    if (!$song->{title} && !$song->{artist}) {
+        return 0;
+    }
+
+    $song->{album}   = $data[3];
+    $song->{seconds} = $data[4];
+    $song->{time}    = time() - $song->{seconds};
+    $song->{length}  = $data[5];
+
+    if ($song->{seconds} =~ /^(\d+)\.(\d+)$/) {
+        $song->{seconds} = ($1 * 60) + $2;
+    }
+    else {
+        $song->{seconds} = 0;
+    }
+
+    if ($song->{length} =~ /^(\d+)\.(\d+)$/) {
+        $song->{length} = ($1 * 60) + $2;
+    }
+    else {
+        $song->{length} = 0;
+    }
+
+    if (!$song->{length}) {
+        return 0;
+    }
+
+    if (Song::equal($Old, $song) && $Old->{seconds} == $song->{seconds}) {
+        $song->{state} = 'pause';
+    }
+    else {
+        $song->{state} = 'play';
+    }
+
+    $song->{source} = 'P';
 
     return $song;
 }

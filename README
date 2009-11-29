@@ -1,5 +1,22 @@
 lololololololol last.fm
 
+Supported players:
+MOC, MPD, mp3blaster, Rhythmbox
+
+Features:
+Player independant, supported players are listed below.
+Supports the "Listening Now" last.fm function.
+Supports caching of listenings when there are connection/server problems and sends them when possible.
+Submits multiple times when listening repeatedly to the same song.
+
+Services:
+To use services you need a supporting threads Perl, IO::Socket and JSON to be installed.
+
+current - get current song informations.
+submit  - send a song to last.fm with a given account or the configuration one.
+change  - event-like on song change, uses blocking sockets to wait till the song changes and gives infos about it.
+
+Installation:
 --
 # perl -MCPAN -e shell
 cpan> install Net::LastFM::Submission
@@ -15,9 +32,3 @@ If you use MPD you need to do:
 # perl -MCPAN -e shell
 cpan> install Audio::MPD
 --
-
-Services:
-
-To use services you need a supporting threads Perl, IO::Socket and JSON to be installed.
-
-current - this service permits to get current song informations.

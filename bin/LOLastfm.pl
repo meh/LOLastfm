@@ -194,6 +194,48 @@ sub equal {
     return ($first->{title} eq $second->{title} && $first->{album} eq $second->{album} && $first->{artist} eq $second->{artist});
 }
 
+sub fromFile {
+    require Music::Tag;
+
+    my $path = shift;
+    my $song = {};
+
+    if ($Old != 0 && defined $Old->{path} && $Old->{path} eq $path) {
+        my %copy = %{$Old};
+           $song = \%copy;
+
+        $song->{seconds} += $Tick;
+        return $song;
+    }
+
+    my $file = new Music::Tag($path);
+    $file->get_tag();
+
+    $song->{path} = $path;
+
+    $song->{title}  = $file->title();
+    $song->{artist} = $file->artist();
+
+    if (!$song->{title} && !$song->{artist}) {
+        return 0;
+    }
+
+    $song->{album} = $file->album();
+    $song->{id}    = $file->track();
+
+    $song->{length}  = $file->secs();
+    $song->{time}    = time() - $song->{length};
+    $song->{seconds} = 0;
+
+    $song->{genre}   = $file->genre();
+    $song->{country} = $file->country();
+    $song->{year}    = $file->year();
+
+    $song->{state} = 'play';
+
+    return $song;
+}
+
 sub reset {
     return {
         title   => '',
@@ -336,7 +378,7 @@ sub init {
         Player::Amarok::init();
     }
     else {
-        die "No supported player has been selected.";
+        Player::Other::init($player);
     }
 
     $function = getFunction($player);
@@ -358,10 +400,10 @@ sub getFunction {
         return \&Player::Rhythmbox::currentSong;
     }
     elsif ($player eq 'amarok') {
-        return \&Player::Amarok::currenSong;
+        return \&Player::Amarok::currentSong;
     }
     else {
-        return undef;
+        return \&Player::Other::currentSong;
     }
 }
 
@@ -384,7 +426,7 @@ sub inited {
         return $Player::Amarok::inited;
     }
     else {
-        return 0;
+        return $Player::Other::inited;
     }
 }
 
@@ -716,6 +758,29 @@ sub currentSong {
     $song->{source}  = 'P';
 
     return $song;
+}
+
+package Player::Other;
+
+our $name;
+our $inited;
+our $command;
+
+sub init {
+    $name    = shift;
+    $command = "lsof -c $name | egrep -i '\\.(mp3|ogg|m4a|m4b|m4p|mp4|3gp|flac)'";
+    $inited  = 1;
+}
+
+sub currentSong {
+    my $output = `$command`;
+
+    if ($output =~ m{\d+\s+(\/.+)$}) {
+        return Song::fromFile($1);
+    }
+    else {
+        return 0;
+    }
 }
 
 package Services;

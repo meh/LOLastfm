@@ -1,7 +1,11 @@
 lololololololol last.fm
 
 Supported players:
-MOC, MPD, mp3blaster, Rhythmbox, Amarok
+MOC, MPD, mp3blaster, Rhythmbox, Amarok, others.
+
+For others I mean just put the binary name of the player and see if it works, it probably will :)
+
+Tested (and working) others: mplayer, totem, vlc
 
 Features:
 Player independant, supported players are listed below.
@@ -32,3 +36,10 @@ MPD dependencies:
 
 Amarok dependencies:
 - DCOP::Amarok::Player
+
+Other dependencies:
+- Music::Tag
+- Music::Tag::MP3
+- Music::Tag::OGG
+- Music::Tag::M4A
+- Music::Tag::FLAC

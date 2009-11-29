@@ -16,7 +16,7 @@
     </services>
     -->
 
-    <!-- Players: moc, mpd, mp3blaster, rhythmbox, amarok -->
+    <!-- Players: moc, mpd, mp3blaster, rhythmbox, amarok, mplayer -->
     <player>moc</player>
 
     <!-- Check informations again every tick seconds -->
@@ -66,4 +66,8 @@
         <!-- Same thing as moc -->
         <!-- <as>user</as> -->
     </amarok>
+
+    <mplayer>
+        <alias>mplayer</alias>
+    </mplayer>
 </config>

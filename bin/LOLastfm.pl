@@ -420,7 +420,7 @@ package Player::MPD;
 my $connection;
 
 sub init {
-    use Audio::MPD;
+    require Audio::MPD;
 
     $connection = newConnection();
 }
@@ -561,7 +561,7 @@ package Services;
 my $Services = {};
 
 sub init {
-    use threads;
+    require threads;
 
     my $enable = shift;
 
@@ -586,13 +586,13 @@ sub init {
 }
 
 sub dispatcher {
-    use IO::Socket;
-    use JSON;
+    require IO::Socket;
+    require JSON;
 
     my $socket = new IO::Socket::INET(
         LocalHost => $Config->{services}->{host} || '127.0.0.1',
         LocalPort => $Config->{services}->{port} || 9001,
-        Listen    => SOMAXCONN,
+        Listen    => 1337,
         Reuse     => 1
     );
 

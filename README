@@ -1,11 +1,20 @@
 lololololololol last.fm
 
 Supported players:
-MOC, MPD, mp3blaster, Rhythmbox, Amarok, others.
+MOC        - Full support.
+MPD        - Full support, might hang if the connection with the server dies.
+mp3blaster - Nearly full support. Doesn't support song repeating submits, it's a problem of mp3blaster.
+Rhythmbox  - Full support.
+Amarok     - Full support.
+Others     - Have the same problem of mp3blaster, see below for more informations.
 
 For others I mean just put the binary name of the player and see if it works, it probably will :)
 
-Tested (and working) others: mplayer, totem, vlc
+Tested (and working) others:
+mplayer    - Works like a charm.
+totem      - If you listen to one song you have to play another one or quit totem to scrobble, it's a totem's bug.
+vlc        - Works like a charm.
+alsaplayer - Works like a charm.
 
 Features:
 Player independant, supported players are listed below.
@@ -37,7 +46,7 @@ MPD dependencies:
 Amarok dependencies:
 - DCOP::Amarok::Player
 
-Other dependencies:
+Other dependencies (it also needs the program lsof):
 - Music::Tag
 - Music::Tag::MP3
 - Music::Tag::OGG

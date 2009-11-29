@@ -20,8 +20,6 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
-use Data::Dumper;
-
 my $Version = '0.3.2';
 
 my %options;
@@ -170,12 +168,18 @@ sub equal {
 
         return 0;
     }
+    elsif (not defined $second) {
+        return 0;
+    }
 
     if ($first == 0) {
         if ($second == 0) {
             return 1;
         }
 
+        return 0;
+    }
+    elsif ($second == 0) {
         return 0;
     }
 
@@ -677,9 +681,6 @@ sub exec {
 
 package Services::Change;
 
-my $old;
-my $new;
-
 sub exec {
     my $socket = shift;
     my $data   = shift;
@@ -696,15 +697,18 @@ sub exec {
         $function = \&Player::currentSong;
     }
 
-    $old = &$function();
-    $new = $old;
+    $Old = &$function();
+    $New = $Old;
 
-    while (Song::equal($old, $new)) {
+    while (Song::equal($Old, $New)) {
         sleep $Tick;
-        $new = &$function();
+
+        if (($New = &$function()) == 0) {
+            $Old = 0;
+        }
     }
 
-    print $socket JSON::to_json($new), "\n";
+    print $socket JSON::to_json($New), "\n";
 }
 
 package Misc;

@@ -574,7 +574,7 @@ package Player::Rhythmbox;
 our $command;
 
 sub init {
-    $command = 'rhythmbox-client --print-playing-format " _ : %tn _ %tt _ %ta _ %at _ %te _ %td"';
+    $command = "rhythmbox-client --print-playing-format \"%tn\n%tt\n%ta\n%at\n%te\n%td\"";
 
     if ($Config->{rhythmbox}->{as}) {
         $command = "su -c '$command' $Config->{rhythmbox}->{as}";
@@ -582,30 +582,9 @@ sub init {
 }
 
 sub currentSong {
-    my $song = {};
-    my $output;
-    my @data;
-    
-    my $replace = $command;
-    while (1) {
-        $output = `$replace`;
-
-        if ($output =~ m{^(.*): (.*)$}) {
-            my $separator = $1;
-
-            @data = split /$separator/, $2;
-            if ($#data == 5) {
-                last;
-            }
-
-            $separator =~ m{^ ([_]+) $};
-            $separator = $1;
-            $replace   =~ s/ $separator / ${separator}_ /g;
-        }
-        else {
-            return 0;
-        }
-    }
+    my $song   = {};
+    my $output = `$command`;
+    my @data   = split /\n/, $output;
 
     $song->{id}     = $data[0];
     $song->{title}  = $data[1];
@@ -617,7 +596,6 @@ sub currentSong {
 
     $song->{album}   = $data[3];
     $song->{seconds} = $data[4];
-    $song->{time}    = time() - $song->{seconds};
     $song->{length}  = $data[5];
 
     if ($song->{seconds} =~ /^(\d+)\.(\d+)$/) {
@@ -645,6 +623,7 @@ sub currentSong {
         $song->{state} = 'play';
     }
 
+    $song->{time}   = time() - $song->{seconds};
     $song->{source} = 'P';
 
     return $song;

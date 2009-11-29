@@ -20,6 +20,8 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
+use Data::Dumper;
+
 my $Version = '0.3.2';
 
 my %options;
@@ -35,7 +37,7 @@ my $Cache   = $options{C} || $Config->{cache};
 my $Tick    = $options{T} || $Config->{tick} || 5;
 my $Seconds = $options{S} || $Config->{seconds} || 20;
 
-Player::init ($options{P} || $Config->{player});
+Player::init($options{P} || $Config->{player});
 
 if (defined $options{s} || defined $Config->{services}) {
     Services::init($options{s} || $Config->{services});
@@ -44,60 +46,61 @@ if (defined $options{s} || defined $Config->{services}) {
 my $User     = $options{u} || $Config->{lastfm}->{user};
 my $Password = $options{p} || $Config->{lastfm}->{password};
 
-if (not defined $User || not defined $Password) {
-    die "User or password were missing.";
+my $LastFM;
+my $Handshake;
+if (defined $User && defined $Password) {
+    $LastFM = new Net::LastFM::Submission(
+        user     => $User,
+        password => $Password,
+
+        enc => $options{E} || $Config->{encoding} || 'utf8',
+
+        client_id  => 'lol',
+        client_ver => $Version,
+    );
+
+    $Handshake = $LastFM->handshake();
+
+    if (not defined $Handshake->{error}) {
+        Cache::submit();
+    }
 }
 
-my $LastFM = new Net::LastFM::Submission(
-    user     => $User,
-    password => $Password,
-
-    enc => $options{E} || $Config->{encoding} || 'utf8',
-
-    client_id  => 'lol',
-    client_ver => $Version,
-);
-
-my $Handshake = $LastFM->handshake();
-
-if (not defined $Handshake->{error}) {
-    Cache::submit();
-}
-
-my $old = Song::reset();
+my $Old = Song::reset();
+my $New;
 
 while (1) {
-    my $song = Player::currentSong();
+    $New = Player::currentSong();
 
-    if (!$song) {
-        if ($old->{seconds} >= $old->{length} - $Seconds) {
-            Song::submit($old);
-            $old = Song::reset();
+    if (!$New) {
+        if ($Old->{seconds} >= $Old->{length} - $Seconds) {
+            Song::submit($Old);
+            $Old = Song::reset();
         }
     }
     else {
-        if ($song->{state} eq 'pause' || ($old->{title} eq $song->{title} && $old->{album} eq $song->{album} && $old->{artist} eq $song->{artist} && $old->{seconds} < $song->{seconds})) {
-            if (!$Song::Paused && $song->{state} eq 'pause') {
+        if ($New->{state} eq 'pause' || (Song::equal($Old, $New) && $Old->{seconds} < $New->{seconds})) {
+            if (!$Song::Paused && $New->{state} eq 'pause') {
                 $Song::Paused = 1;
             }
 
-            if ($Song::Paused && $song->{state} eq 'play' || !$Song::NowPlaying) {
+            if ($Song::Paused && $New->{state} eq 'play' || !$Song::NowPlaying) {
                 if ($Song::Paused) {
                     $Song::Paused = 0;
                 }
 
-                Song::nowPlaying($song);
+                Song::nowPlaying($New);
             }
         }
         else {
-            if ($old->{seconds} >= $old->{length} - $Seconds) {
-                Song::submit($old);
+            if ($Old->{seconds} >= $Old->{length} - $Seconds) {
+                Song::submit($Old);
             }
 
-            Song::nowPlaying($song);
+            Song::nowPlaying($New);
         }
 
-        $old = $song;
+        $Old = $New;
     }
 
     sleep $Tick;
@@ -109,6 +112,10 @@ our $NowPlaying = 0;
 our $Paused     = 0;
 
 sub nowPlaying {
+    if (not defined $LastFM) {
+        return;
+    }
+
     if (defined $Handshake->{error}) {
         $Handshake = $LastFM->handshake();
     }
@@ -128,6 +135,10 @@ sub nowPlaying {
 }
 
 sub submit {
+    if (not defined $LastFM) {
+        return;
+    }
+
     my $song = shift;
 
     my $check = Cache::submit();
@@ -146,6 +157,29 @@ sub submit {
     }
 
     return $check;
+}
+
+sub equal {
+    my $first  = shift;
+    my $second = shift;
+
+    if (not defined $first) {
+        if (not defined $second) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    if ($first == 0) {
+        if ($second == 0) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    return ($first->{title} eq $second->{title} && $first->{album} eq $second->{album} && $first->{artist} eq $second->{artist});
 }
 
 sub reset {
@@ -231,7 +265,11 @@ sub flush {
 }
 
 sub submit {
-    if (!$Cache) {
+    if (not defined $LastFM) {
+        return;
+    }
+
+    if (not $Cache) {
         return { status => 'OK' };
     }
 
@@ -268,18 +306,34 @@ sub init {
 
     if ($player eq 'moc') {
         Player::MOC::init();
-        $function = \&Player::MOC::currentSong;
     }
     elsif ($player eq 'mpd') {
         Player::MPD::init();
-        $function = \&Player::MPD::currentSong;
     }
     elsif ($player eq 'mp3blaster') {
         Player::MP3Blaster::init();
-        $function = \&Player::MP3Blaster::currentSong;
     }
     else {
         die "No supported player has been selected.";
+    }
+
+    $function = getFunction($player);
+}
+
+sub getFunction {
+    my $player = shift;
+
+    if ($player eq 'moc') {
+        return \&Player::MOC::currentSong;
+    }
+    elsif ($player eq 'mpd') {
+        return \&Player::MPD::currentSong;
+    }
+    elsif ($player eq 'mp3blaster') {
+        return \&Player::MP3Blaster::currentSong;
+    }
+    else {
+        return undef;
     }
 }
 
@@ -482,8 +536,8 @@ sub currentSong {
     if ($output =~ m{^length (.*)$}m) {
         $song->{length} = $1;
 
-        if ($old->{title} eq $song->{title} && $old->{album} eq $song->{album} && $old->{artist} eq $song->{artist}) {
-            $song->{seconds} = $old->{seconds} + $Tick;
+        if (Song::equal($Old, $song)) {
+            $song->{seconds} = $Old->{seconds} + $Tick;
         }
         else {
             $song->{seconds} = 0;
@@ -515,6 +569,9 @@ sub init {
                 }
                 elsif ($service->{name} eq 'submit') {
                     $Services->{$service->{name}} = \&Services::Submit::exec;
+                }
+                elsif ($service->{name} eq 'change') {
+                    $Services->{$service->{name}} = \&Services::Change::exec;
                 }
             }
         }
@@ -568,7 +625,21 @@ package Services::Current;
 
 sub exec {
     my $socket = shift;
-    my $song   = Player::currentSong();
+    my $data   = shift;
+
+    if (defined $data) {
+        $data = JSON::from_json($data, { utf8 => 1 });
+    }
+
+    my $function;
+    if (defined $data->{player}) {
+        $function = Player::getFunction($data->{player});
+    }
+    else {
+        $function = \&Player::currentSong;
+    }
+
+    my $song = &$function();
 
     if (!$song) {
         print $socket 'null', "\n";
@@ -602,6 +673,38 @@ sub exec {
     else {
         Song::submit($song);
     }
+}
+
+package Services::Change;
+
+my $old;
+my $new;
+
+sub exec {
+    my $socket = shift;
+    my $data   = shift;
+
+    if (defined $data) {
+        $data = JSON::from_json($data, { utf8 => 1 });
+    }
+
+    my $function;
+    if (defined $data->{player}) {
+        $function = Player::getFunction($data->{player});
+    }
+    else {
+        $function = \&Player::currentSong;
+    }
+
+    $old = &$function();
+    $new = $old;
+
+    while (Song::equal($old, $new)) {
+        sleep $Tick;
+        $new = &$function();
+    }
+
+    print $socket JSON::to_json($new), "\n";
 }
 
 package Misc;

@@ -15,7 +15,7 @@
     </services>
     -->
 
-    <!-- Players: moc, mpd, mp3blaster -->
+    <!-- Players: moc, mpd, mp3blaster, rhythmbox, amarok -->
     <player>moc</player>
 
     <!-- Check informations again every tick seconds -->

@@ -23,9 +23,8 @@ while (1) {
     if ($song->{title}) {
         print "$song->{title} ";
     }
-    
     if ($song->{album}) {
-        print "($song->{album}) "
+        print "($song->{album}) ";
     }
     if ($song->{artist}) {
         print "{$song->{artist}}";

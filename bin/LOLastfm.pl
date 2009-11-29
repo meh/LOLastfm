@@ -20,7 +20,9 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
-my $Version = '0.3.2';
+use Data::Dumper;
+
+my $Version = '0.3.3';
 
 my %options;
 getopts('hf:s:u:p:C:P:S:T:E:', \%options);
@@ -34,6 +36,13 @@ my $Config  = XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray
 my $Cache   = $options{C} || $Config->{cache};
 my $Tick    = $options{T} || $Config->{tick} || 5;
 my $Seconds = $options{S} || $Config->{seconds} || 20;
+
+if (ref $Cache eq 'HASH') {
+    $Cache = '';
+}
+elsif ($Cache && not -e $Cache) {
+    die "The cache can't be accessed.";
+}
 
 Player::init($options{P} || $Config->{player});
 
@@ -137,8 +146,7 @@ sub submit {
         return;
     }
 
-    my $song = shift;
-
+    my $song  = shift;
     my $check = Cache::submit();
 
     if (defined $check->{error}) {
@@ -201,7 +209,7 @@ package Cache;
 sub push {
     my $song = shift;
 
-    if (!$Cache) {
+    if (not $Cache) {
         return;
     }
 
@@ -221,7 +229,7 @@ sub get {
     my $counter = 0;
     my @songs;
 
-    if (!$Cache) {
+    if (not $Cache) {
         return @songs;
     }
 
@@ -353,19 +361,19 @@ sub currentSong {
 
 package Player::MOC;
 
-my $mocp;
+our $command;
 
 sub init {
-    $mocp = 'mocp -i';
+    $command = 'mocp -i';
 
     if ($Config->{moc}->{as}) {
-        $mocp = "su -c '$mocp' $Config->{moc}->{as}";
+        $command = "su -c '$command' $Config->{moc}->{as}";
     }
 }
 
 sub currentSong {
-    my $song    = {};
-    my $output  = `$mocp`;
+    my $song   = {};
+    my $output = `$command`;
 
     if ($output =~ m{State: (PLAY|PAUSE)}) {
         $song->{state} = lc $1;
@@ -422,7 +430,7 @@ sub currentSong {
 
 package Player::MPD;
 
-my $connection;
+our $connection;
 
 sub init {
     require Audio::MPD;
@@ -487,7 +495,7 @@ sub currentSong {
 
 package Player::MP3Blaster;
 
-my $statusFile;
+our $statusFile;
 
 sub init {
     if (not defined $Config->{mp3blaster}->{statusFile}) {
@@ -563,13 +571,13 @@ sub currentSong {
 
 package Player::Rhythmbox;
 
-my $rhythmbox;
+our $command;
 
 sub init {
-    $rhythmbox = 'rhythmbox-client --print-playing-format " _ : %tn _ %tt _ %ta _ %at _ %te _ %td"';
+    $command = 'rhythmbox-client --print-playing-format " _ : %tn _ %tt _ %ta _ %at _ %te _ %td"';
 
     if ($Config->{rhythmbox}->{as}) {
-        $rhythmbox = "su -c '$rhythmbox' $Config->{rhythmbox}->{as}";
+        $command = "su -c '$command' $Config->{rhythmbox}->{as}";
     }
 }
 
@@ -578,7 +586,7 @@ sub currentSong {
     my $output;
     my @data;
     
-    my $replace = $rhythmbox;
+    my $replace = $command;
     while (1) {
         $output = `$replace`;
 
@@ -812,7 +820,7 @@ Usage: LOLastfm [options]
 -p password : use the given password instead of the config one
 
 -C cache    : use the given cache as caching file
--P player   : use the given player as scrobbling one
+-P player   : use the given player as scrobbling one (moc, mpd, mp3blaster, rhythmbox, amarok)
 -S seconds  : sends the song as listened when you got past (songLength - seconds)
 -T tick     : check informations again every tick seconds
 -E encoding : encoding to automatically encode from, last.fm needs utf8 strings

@@ -61,4 +61,9 @@
         <!-- needed informations.                                                                                -->
         <!-- <as>user</as> -->
     </rhythmbox>
+
+    <amarok>
+        <!-- Same thing as moc -->
+        <!-- <as>user</as> -->
+    </amarok>
 </config>

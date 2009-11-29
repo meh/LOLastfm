@@ -316,6 +316,10 @@ my $function;
 sub init {
     my $player = shift;
 
+    if (inited($player)) {
+        return;
+    }
+
     if ($player eq 'moc') {
         Player::MOC::init();
     }
@@ -327,6 +331,9 @@ sub init {
     }
     elsif ($player eq 'rhythmbox') {
         Player::Rhythmbox::init();
+    }
+    elsif ($player eq 'amarok') {
+        Player::Amarok::init();
     }
     else {
         die "No supported player has been selected.";
@@ -350,8 +357,34 @@ sub getFunction {
     elsif ($player eq 'rhythmbox') {
         return \&Player::Rhythmbox::currentSong;
     }
+    elsif ($player eq 'amarok') {
+        return \&Player::Amarok::currenSong;
+    }
     else {
         return undef;
+    }
+}
+
+sub inited {
+    my $player = shift;
+
+    if ($player eq 'moc') {
+        return $Player::MOC::inited;
+    }
+    elsif ($player eq 'mpd') {
+        return $Player::MPD::inited;
+    }
+    elsif ($player eq 'mp3blaster') {
+        return $Player::MP3Blaster::inited;
+    }
+    elsif ($player eq 'rhythmbox') {
+        return $Player::Rhythmbox::inited;
+    }
+    elsif ($player eq 'amarok') {
+        return $Player::Amarok::inited;
+    }
+    else {
+        return 0;
     }
 }
 
@@ -361,6 +394,7 @@ sub currentSong {
 
 package Player::MOC;
 
+our $inited;
 our $command;
 
 sub init {
@@ -369,6 +403,8 @@ sub init {
     if ($Config->{moc}->{as}) {
         $command = "su -c '$command' $Config->{moc}->{as}";
     }
+
+    $inited = 1;
 }
 
 sub currentSong {
@@ -430,12 +466,14 @@ sub currentSong {
 
 package Player::MPD;
 
+our $inited;
 our $connection;
 
 sub init {
     require Audio::MPD;
 
     $connection = newConnection();
+    $inited     = 1;
 }
 
 sub newConnection {
@@ -487,6 +525,7 @@ sub currentSong {
     $song->{album}   = $mpdSong->album();
     $song->{seconds} = $mpdState->time()->seconds_sofar();
     $song->{length}  = $mpdSong->time();
+    $song->{time}    = time() - $song->{seconds};
     $song->{id}      = $mpdSong->track();
     $song->{source}  = 'P';
 
@@ -495,6 +534,7 @@ sub currentSong {
 
 package Player::MP3Blaster;
 
+our $inited;
 our $statusFile;
 
 sub init {
@@ -503,6 +543,7 @@ sub init {
     }
 
     $statusFile = $Config->{mp3blaster}->{statusFile};
+    $inited     = 1;
 }
 
 sub currentSong {
@@ -571,6 +612,7 @@ sub currentSong {
 
 package Player::Rhythmbox;
 
+our $inited;
 our $command;
 
 sub init {
@@ -579,6 +621,8 @@ sub init {
     if ($Config->{rhythmbox}->{as}) {
         $command = "su -c '$command' $Config->{rhythmbox}->{as}";
     }
+
+    $inited = 1;
 }
 
 sub currentSong {
@@ -625,6 +669,51 @@ sub currentSong {
 
     $song->{time}   = time() - $song->{seconds};
     $song->{source} = 'P';
+
+    return $song;
+}
+
+package Player::Amarok;
+
+our $inited;
+our $player;
+
+sub init {
+    require DCOP::Amarok::Player;
+
+    $player = new DCOP::Amarok::Player;
+    $inited = 1;
+}
+
+sub currentSong {
+    my $song = {};
+
+    my $status = $player->status();
+    if ($status <= 0) {
+        return 0;
+    }
+    else {
+        if ($status == 1) {
+            $song->{state} = 'pause';
+        }
+        elsif ($status == 2) {
+            $song->{state} = 'play';
+        }
+    }
+
+    $song->{title}  = $player->title();
+    $song->{artist} = $player->artist();
+
+    if (not $song->{title} && not $song->{artist}) {
+        return 0;
+    }
+
+    $song->{album}   = $player->album();
+    $song->{seconds} = $player->trackCurrentTime();
+    $song->{length}  = $player->trackTotalTime();
+    $song->{time}    = time() - $song->{seconds};
+    $song->{id}      = $player->track();
+    $song->{source}  = 'P';
 
     return $song;
 }
@@ -710,6 +799,7 @@ sub exec {
 
     my $function;
     if (defined $data->{player}) {
+        Player::init($data->{player});
         $function = Player::getFunction($data->{player});
     }
     else {
@@ -764,6 +854,7 @@ sub exec {
 
     my $function;
     if (defined $data->{player}) {
+        Player::init($data->{player});
         $function = Player::getFunction($data->{player});
     }
     else {

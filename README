@@ -1,7 +1,7 @@
 lololololololol last.fm
 
 Supported players:
-MOC, MPD, mp3blaster, Rhythmbox
+MOC, MPD, mp3blaster, Rhythmbox, Amarok
 
 Features:
 Player independant, supported players are listed below.
@@ -23,12 +23,12 @@ cpan> install Net::LastFM::Submission
 cpan> install XML::Simple
 --
 
-And then you can |make install| it (as root) :)
+And then you can *make install* it (as root) :)
 
-LOLastfm -h for the options or use the /etc/init.d/LOLastfm (only for Gentoo and runscript compliant distros)
+LOLastfm -h for the options or use the /etc/init.d/LOLastfm (only for Gentoo and runscript compliant distros), or the general daemon in etc/rc.d/ :)
 
-If you use MPD you need to do:
---
-# perl -MCPAN -e shell
-cpan> install Audio::MPD
---
+MPD dependencies:
+- Audio::MPD
+
+Amarok dependencies:
+- DCOP::Amarok::Player

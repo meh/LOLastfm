@@ -20,8 +20,6 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
-use Data::Dumper;
-
 my $Version = '0.4';
 
 my %options;
@@ -63,6 +61,7 @@ our $Password = $options{p} || $Config->{lastfm}->{password};
 
 our $LastFM;
 our $Handshake;
+
 if (defined $User && defined $Password) {
     $LastFM = new Net::LastFM::Submission(
         user     => $User,
@@ -123,8 +122,8 @@ while (1) {
 
 package Song;
 
-our $NowPlaying = 0;
-our $Paused     = 0;
+our $NowPlaying : shared;
+our $Paused     : shared;
 
 sub nowPlaying {
     if (not defined $LastFM) {

@@ -21,7 +21,20 @@ use JSON;
 
 my $name = shift;
 my $data = shift;
-my $json = new JSON()->allow_nonref(1);
+
+if (!$name || !$data) {
+    print Misc::usage();
+    exit;
+}
+
+my $json = new JSON()->allow_nonref(1)->allow_barekey(1);
+
+eval {
+    $json->decode($data);
+};
+if ($@) {
+    $data = '"'.$data.'"';
+}
 
 my $socket = new IO::Socket::INET(
     PeerAddr => '127.0.0.1',
@@ -38,3 +51,18 @@ my $check = <$socket>;
 print $check;
 
 close $socket;
+
+package Misc;
+
+sub usage {
+    return << "USAGE";
+Usage: LOLastfm-set <setting> <value>
+
+Examples:
+    LOLastfm-set player mplayer
+    LOLastfm-set access '{ user: "dix", password: "nood" }'
+    LOLastfm-set tick 2
+    LOLastfm-set seconds 10
+    LOLastfm-set cache /tmp/lol.cache
+USAGE
+}

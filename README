@@ -15,6 +15,10 @@ mplayer    - Works like a charm.
 totem      - If you listen to one song you have to play another one or quit totem to scrobble, it's a totem's bug.
 vlc        - Works like a charm.
 alsaplayer - Works like a charm.
+songbird   - Works like a charm.
+mpg321     - Works like a charm.
+mpg123     - Couldn't run it (lol) but I guess it will work as mpg321.
+audacious  - Works like a charm.
 
 Features:
 Player independant, supported players are listed below.
@@ -25,9 +29,12 @@ Submits multiple times when listening repeatedly to the same song.
 Services:
 To use services you need a supporting threads Perl, IO::Socket and JSON to be installed.
 
+set     - change settings of LOLastfm without restarting it.
 current - get current song informations.
 submit  - send a song to last.fm with a given account or the configuration one.
 change  - event-like on song change, uses blocking sockets to wait till the song changes and gives infos about it.
+
+The set service has its own program, LOLastfm-set, and has some options, you can see them by running it without any parameter.
 
 Installation:
 --

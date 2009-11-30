@@ -893,6 +893,7 @@ sub set {
     if ($name eq 'player') {
         $Player::name = $data;
         Player::init($Player::name);
+        $Song::NowPlaying = 0;
     }
     elsif ($name eq 'seconds') {
         $::Seconds = $data;

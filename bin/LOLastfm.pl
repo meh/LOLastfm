@@ -32,29 +32,37 @@ if ($options{h}) {
     exit;
 }
 
-my $Config  = XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray => [ 'service' ]);
-my $Cache   = $options{C} || $Config->{cache};
-my $Tick    = $options{T} || $Config->{tick} || 5;
-my $Seconds = $options{S} || $Config->{seconds} || 20;
+our $Config = XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray => [ 'service' ]);
 
-if (ref $Cache eq 'HASH') {
+if (defined $options{s} || defined $Config->{services}) {
+    use threads;
+    use threads::shared;
+
+    Services::init($options{s} || $Config->{services});
+}
+
+our $Cache   : shared;
+our $Tick    : shared;
+our $Seconds : shared;
+
+if (ref ($Cache = $options{C} || $Config->{cache}) eq 'HASH') {
     $Cache = '';
 }
 elsif ($Cache && not -e $Cache) {
     die "The cache can't be accessed.";
 }
 
-Player::init($options{P} || $Config->{player});
+$Tick    = $options{T} || $Config->{tick} || 5;
+$Seconds = $options{S} || $Config->{seconds} || 20;
 
-if (defined $options{s} || defined $Config->{services}) {
-    Services::init($options{s} || $Config->{services});
-}
+$Player::name = $options{P} || $Config->{player};
+Player::init($Player::name);
 
-my $User     = $options{u} || $Config->{lastfm}->{user};
-my $Password = $options{p} || $Config->{lastfm}->{password};
+our $User     = $options{u} || $Config->{lastfm}->{user};
+our $Password = $options{p} || $Config->{lastfm}->{password};
 
-my $LastFM;
-my $Handshake;
+our $LastFM;
+our $Handshake;
 if (defined $User && defined $Password) {
     $LastFM = new Net::LastFM::Submission(
         user     => $User,
@@ -73,8 +81,8 @@ if (defined $User && defined $Password) {
     }
 }
 
-my $Old = Song::reset();
-my $New;
+our $Old = Song::reset();
+our $New;
 
 while (1) {
     $New = Player::currentSong();
@@ -200,7 +208,7 @@ sub fromFile {
     my $path = shift;
     my $song = {};
 
-    if ($Old != 0 && defined $Old->{path} && $Old->{path} eq $path) {
+    if ($Old && defined $Old->{path} && $Old->{path} eq $path) {
         my %copy = %{$Old};
            $song = \%copy;
 
@@ -354,7 +362,7 @@ sub submit {
 
 package Player;
 
-my $function;
+our $name : shared;
 
 sub init {
     my $player = shift;
@@ -381,8 +389,6 @@ sub init {
     else {
         Player::Other::init($player);
     }
-
-    $function = getFunction($player);
 }
 
 sub getFunction {
@@ -432,7 +438,8 @@ sub inited {
 }
 
 sub currentSong {
-    return &$function();
+    my $function = getFunction($name);
+    &$function();
 }
 
 package Player::MOC;
@@ -509,7 +516,7 @@ sub currentSong {
 
 package Player::MPD;
 
-our $inited;
+our $inited : shared;
 our $connection;
 
 sub init {
@@ -577,8 +584,8 @@ sub currentSong {
 
 package Player::MP3Blaster;
 
-our $inited;
-our $statusFile;
+our $inited     : shared;
+our $statusFile : shared;
 
 sub init {
     if (not defined $Config->{mp3blaster}->{statusFile}) {
@@ -655,8 +662,8 @@ sub currentSong {
 
 package Player::Rhythmbox;
 
-our $inited;
-our $command;
+our $inited  : shared;
+our $command : shared;
 
 sub init {
     $command = "rhythmbox-client --print-playing-format \"%tn\n%tt\n%ta\n%at\n%te\n%td\"";
@@ -718,7 +725,7 @@ sub currentSong {
 
 package Player::Amarok;
 
-our $inited;
+our $inited : shared;
 our $player;
 
 sub init {
@@ -763,9 +770,9 @@ sub currentSong {
 
 package Player::Other;
 
-our $name;
-our $inited;
-our $command;
+our $name    : shared;
+our $inited  : shared;
+our $command : shared;
 
 sub init {
     $name    = shift;
@@ -775,6 +782,10 @@ sub init {
 
 sub currentSong {
     my $output = `$command`;
+
+    if (not defined $output) {
+        return 0;
+    }
 
     if ($output =~ m{\d+\s+(\/.+)$}) {
         return Song::fromFile($1);
@@ -786,17 +797,18 @@ sub currentSong {
 
 package Services;
 
-my $Services = {};
+our $Services = {};
 
 sub init {
-    require threads;
-
     my $enable = shift;
 
     if (ref $enable eq 'HASH') {
         if (defined $enable->{service}) {
             for my $service (@{$enable->{service}}) {
-                if ($service->{name} eq 'current') {
+                if ($service->{name} eq 'set') {
+                    $Services->{$service->{name}} = \&Services::Set::exec;
+                }
+                elsif ($service->{name} eq 'current') {
                     $Services->{$service->{name}} = \&Services::Current::exec;
                 }
                 elsif ($service->{name} eq 'submit') {
@@ -832,16 +844,16 @@ sub dispatcher {
 }
 
 sub dispatch {
-    my $socket  = shift;
-    my $service = <$socket>;
+    my $socket = shift;
+    my $line   = <$socket>;
 
-    if (not defined $service) {
+    if (not defined $line) {
         close $socket;
         return;
     }
 
-    chomp $service;
-    if ($service =~ /^(.+?)(\s+(.*)|)$/) {
+    chomp $line;
+    if ($line =~ /^(.+?)(\s+(.*)|)$/) {
         my $service = $1;
         my $data    = $3;
 
@@ -851,6 +863,62 @@ sub dispatch {
     }
 
     close $socket;
+}
+
+package Services::Set;
+
+sub exec {
+    my $socket = shift;
+    my $data   = shift;
+
+    if (not defined $data) {
+        return;
+    }
+
+    my $json = new JSON()->allow_nonref(1);
+
+    $data = $json->decode($data, { utf8 => 1 });
+
+    if (set($data->{name}, $json->decode($data->{value}, { utf8 => 1 }))) {
+        print $socket "true", "\n";
+    }
+    else {
+        print $socket "false", "\n";
+    }
+}
+
+sub set {
+    my $name = shift;
+    my $data = shift;
+
+    if ($name eq 'player') {
+        $Player::name = $data;
+        Player::init($Player::name);
+    }
+    elsif ($name eq 'seconds') {
+        $::Seconds = $data;
+    }
+    elsif ($name eq 'tick') {
+        $::Tick = $data;
+    }
+    elsif ($name eq 'access') {
+        if (defined $data->{user}) {
+            $::User = $data->{user};
+        }
+        if (defined $data->{password}) {
+            $::Password = $data->{password};
+        }
+    }
+    elsif ($name eq 'cache') {
+        if ( -e $data ) {
+            $::Cache = $data;
+        }
+        else {
+            return 0;
+        }
+    }
+
+    return 1;
 }
 
 package Services::Current;

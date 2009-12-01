@@ -16,8 +16,6 @@
 
 use strict;
 use warnings;
-use threads;
-use threads::shared;
 use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
@@ -34,14 +32,7 @@ if ($options{h}) {
 
 our $Config = XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray => [ 'service' ]);
 
-if (defined $options{s} || defined $Config->{services}) {
-    Services::init($options{s} || $Config->{services});
-}
-
-our $Cache   : shared;
-our $Tick    : shared;
-our $Seconds : shared;
-
+our $Cache;
 if (ref ($Cache = $options{C} || $Config->{cache}) eq 'HASH') {
     $Cache = '';
 }
@@ -49,8 +40,8 @@ elsif ($Cache && not -e $Cache) {
     die "The cache can't be accessed.";
 }
 
-$Tick    = $options{T} || $Config->{tick} || 5;
-$Seconds = $options{S} || $Config->{seconds} || "length - 20";
+our $Tick    = $options{T} || $Config->{tick} || 5;
+our $Seconds = $options{S} || $Config->{seconds} || "length - 20";
 
 $Player::name = $options{P} || $Config->{player};
 Player::init($Player::name);
@@ -121,8 +112,8 @@ while (1) {
 
 package Song;
 
-our $NowPlaying : shared;
-our $Paused     : shared;
+our $NowPlaying;
+our $Paused;
 
 sub nowPlaying {
     if (not defined $LastFM) {
@@ -368,7 +359,7 @@ sub submit {
 
 package Player;
 
-our $name : shared;
+our $name;
 
 sub init {
     my $player = shift;
@@ -522,7 +513,7 @@ sub currentSong {
 
 package Player::MPD;
 
-our $inited : shared;
+our $inited;
 our $connection;
 
 sub init {
@@ -590,8 +581,8 @@ sub currentSong {
 
 package Player::MP3Blaster;
 
-our $inited     : shared;
-our $statusFile : shared;
+our $inited;
+our $statusFile;
 
 sub init {
     if (not defined $Config->{mp3blaster}->{statusFile}) {
@@ -668,8 +659,8 @@ sub currentSong {
 
 package Player::Rhythmbox;
 
-our $inited  : shared;
-our $command : shared;
+our $inited;
+our $command;
 
 sub init {
     $command = "rhythmbox-client --print-playing-format \"%tn\n%tt\n%ta\n%at\n%te\n%td\"";
@@ -731,7 +722,7 @@ sub currentSong {
 
 package Player::Amarok;
 
-our $inited : shared;
+our $inited;
 our $player;
 
 sub init {
@@ -776,9 +767,9 @@ sub currentSong {
 
 package Player::Other;
 
-our $name    : shared;
-our $inited  : shared;
-our $command : shared;
+our $name;
+our $inited;
+our $command;
 
 sub init {
     $name    = shift;
@@ -801,228 +792,13 @@ sub currentSong {
     }
 }
 
-package Services;
-
-our $Services = {};
-
-sub init {
-    my $enable = shift;
-
-    if (ref $enable eq 'HASH') {
-        if (defined $enable->{service}) {
-            for my $service (@{$enable->{service}}) {
-                if ($service->{name} eq 'set') {
-                    $Services->{$service->{name}} = \&Services::Set::exec;
-                }
-                elsif ($service->{name} eq 'current') {
-                    $Services->{$service->{name}} = \&Services::Current::exec;
-                }
-                elsif ($service->{name} eq 'submit') {
-                    $Services->{$service->{name}} = \&Services::Submit::exec;
-                }
-                elsif ($service->{name} eq 'change') {
-                    $Services->{$service->{name}} = \&Services::Change::exec;
-                }
-            }
-        }
-    }
-
-    my $thread = new threads(\&dispatcher);
-    $thread->detach();
-}
-
-sub dispatcher {
-    require IO::Socket;
-    require JSON;
-
-    my $socket = new IO::Socket::INET(
-        LocalHost => $Config->{services}->{host} || '127.0.0.1',
-        LocalPort => $Config->{services}->{port} || 9001,
-        Listen    => 1337,
-        Reuse     => 1
-    );
-
-    my $connection;
-    while (($connection = $socket->accept())) {
-        my $thread = new threads(\&dispatch, $connection);
-        $thread->detach();
-    }
-}
-
-sub dispatch {
-    my $socket = shift;
-    my $line   = <$socket>;
-
-    if (not defined $line) {
-        close $socket;
-        return;
-    }
-
-    chomp $line;
-    if ($line =~ /^(.+?)(\s+(.*)|)$/) {
-        my $service = $1;
-        my $data    = $3;
-
-        if (defined $Services->{$service}) {
-            $Services->{$service}($socket, $data);
-        }
-    }
-
-    close $socket;
-}
-
-package Services::Set;
-
-sub exec {
-    my $socket = shift;
-    my $data   = shift;
-
-    if (not defined $data) {
-        return;
-    }
-
-    my $json = new JSON()->allow_nonref(1);
-
-    $data = $json->decode($data, { utf8 => 1 });
-
-    if (set($data->{name}, $json->decode($data->{value}, { utf8 => 1 }))) {
-        print $socket "true", "\n";
-    }
-    else {
-        print $socket "false", "\n";
-    }
-}
-
-sub set {
-    my $name = shift;
-    my $data = shift;
-
-    if ($name eq 'player') {
-        $Player::name = $data;
-        Player::init($Player::name);
-        $Song::NowPlaying = 0;
-    }
-    elsif ($name eq 'seconds') {
-        $::Seconds = $data;
-    }
-    elsif ($name eq 'tick') {
-        $::Tick = $data;
-    }
-    elsif ($name eq 'access') {
-        if (defined $data->{user}) {
-            $::User = $data->{user};
-        }
-        if (defined $data->{password}) {
-            $::Password = $data->{password};
-        }
-    }
-    elsif ($name eq 'cache') {
-        if ( -e $data ) {
-            $::Cache = $data;
-        }
-        else {
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
-package Services::Current;
-
-sub exec {
-    my $socket = shift;
-    my $data   = shift;
-
-    if (defined $data) {
-        $data = JSON::from_json($data, { utf8 => 1 });
-    }
-
-    my $function;
-    if (defined $data->{player}) {
-        Player::init($data->{player});
-        $function = Player::getFunction($data->{player});
-    }
-    else {
-        $function = \&Player::currentSong;
-    }
-
-    my $song = &$function();
-
-    if (!$song) {
-        print $socket 'null', "\n";
-    }
-    else {
-        print $socket JSON::to_json(Player::currentSong()), "\n";
-    }
-}
-
-package Services::Submit;
-
-sub exec {
-    my $socket = shift;
-    my $data   = shift;
-
-    my $song = JSON::from_json($data, { utf8 => 1 });
-
-    if (defined $song->{user} && defined $song->{password}) {
-        my $lastfm = new Net::LastFM::Submission(
-            user     => $song->{user},
-            password => $song->{password},
-
-            enc => $options{E} || $Config->{encoding} || 'utf8',
-
-            client_id  => 'lol',
-            client_ver => $Version,
-        );
-        $lastfm->handshake();
-        $lastfm->submit($song);
-    }
-    else {
-        Song::submit($song);
-    }
-}
-
-package Services::Change;
-
-sub exec {
-    my $socket = shift;
-    my $data   = shift;
-
-    if (defined $data) {
-        $data = JSON::from_json($data, { utf8 => 1 });
-    }
-
-    my $function;
-    if (defined $data->{player}) {
-        Player::init($data->{player});
-        $function = Player::getFunction($data->{player});
-    }
-    else {
-        $function = \&Player::currentSong;
-    }
-
-    $Old = &$function();
-    $New = $Old;
-
-    while (Song::equal($Old, $New)) {
-        sleep $Tick;
-
-        if (($New = &$function()) == 0) {
-            $Old = 0;
-        }
-    }
-
-    print $socket JSON::to_json($New), "\n";
-}
-
 package Misc;
 
 sub usage {
     return << "USAGE";
-LOLastfm $Version
+LOLastfm-small $Version
 
-Usage: LOLastfm [options]
+Usage: LOLastfm-small [options]
 
 -h          : show this help.
 -f file     : use the given file as config file

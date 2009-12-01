@@ -23,8 +23,9 @@
     <!-- Check informations again every tick seconds -->
     <tick>5</tick>
 
-    <!-- Sends the song as listened when you got past (songLength - seconds) -->
-    <seconds>20</seconds>
+    <!-- Sends the song as listened when you got past the given seconds -->
+    <!-- length = $song->{length}                                       -->
+    <seconds>length - 20</seconds>
 
     <!-- Encoding to automatically encode from, last.fm needs utf8 strings -->
     <encoding>utf8</encoding>

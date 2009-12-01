@@ -1,5 +1,9 @@
 lololololololol last.fm
 
+Warning: if you want to use the full version you need Perl installed with threads, there's LOLastfm-small if you don't want to install threads.
+
+LOLastfm-small doesn't have any Service, the rest is exactly as LOLastfm.
+
 Supported players:
 MOC        - Full support.
 MPD        - Full support, might hang if the connection with the server dies.
@@ -27,7 +31,7 @@ Supports caching of listenings when there are connection/server problems and sen
 Submits multiple times when listening repeatedly to the same song.
 
 Services:
-To use services you need a supporting threads Perl, IO::Socket and JSON to be installed.
+To use services you need IO::Socket and JSON to be installed.
 
 set     - change settings of LOLastfm without restarting it.
 current - get current song informations.

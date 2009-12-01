@@ -51,7 +51,7 @@ src_install() {
 
 	dodoc README || die
 
-	ewarn "Remember to install from CPAN Net::LastFM::Submission."
+	ewarn "Remember to install from CPAN Net::LastFM::Submission and XML::Simple."
 	ewarn ""
 	ewarn "If you use MPD install Audio::MPD."
 	ewarn "If you use Amarok install DCOP::Amarok::Player."

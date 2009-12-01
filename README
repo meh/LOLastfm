@@ -14,7 +14,7 @@ Others     - Have the same problem of mp3blaster, see below for more information
 
 For others I mean just put the binary name of the player and see if it works, it probably will :)
 
-Tested (and working) others:
+Tested (and working) others: { if you test a player send me an email and I'll add it here }
 mplayer    - Works like a charm.
 totem      - If you listen to one song you have to play another one or quit totem to scrobble, it's a totem's bug.
 vlc        - Works like a charm.

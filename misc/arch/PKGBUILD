@@ -1,0 +1,35 @@
+# Contributor: meh. <meh.ffff@gmail.com>
+pkgname=LOLastfm
+pkgver=0.4.2
+pkgrel=1
+pkgdesc="last.fm scrobbler for everything."
+arch=(any)
+url="http://github.com/meh/LOLastfm"
+license=('GPL3')
+depends=('perl')
+options=('!emptydirs')
+source=(http://github.com/meh/LOLastfm/tarball/LOLastfm-$pkgver)
+noextract=(http://github.com/meh/LOLastfm/tarball/LOLastfm-$pkgver)
+md5sums=()
+
+build() {
+    cd "$startdir/src"
+    tar xfv $(ls)
+    cd $(ls | grep meh)
+
+    mkdir -p $startdir/pkg/bin
+    mkdir -p $startdir/pkg/etc
+    mkdir -p $startdir/pkg/etc/rc.d
+    mkdir -p $startdir/pkg/var/lib/LOLastfm
+
+    cp bin/LOLastfm.pl $startdir/pkg/bin/LOLastfm
+    chmod o+rx $startdir/pkg/bin/LOLastfm
+
+    cp bin/LOLastfm-set.pl $startdir/pkg/bin/LOLastfm-set
+    chmod o+rx $startdir/pkg/bin/LOLastfm-set
+
+    cp etc/rc.d/LOLastfm $startdir/pkg/etc/rc.d
+    chmod +x $startdir/pkg/etc/rc.d
+
+    cp etc/LOLastfm.xml $startdir/pkg/etc/LOLastfm.xml
+}

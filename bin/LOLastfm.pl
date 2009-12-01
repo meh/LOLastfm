@@ -46,7 +46,7 @@ if (ref ($Cache = $options{C} || $Config->{cache}) eq 'HASH') {
     $Cache = '';
 }
 elsif ($Cache && not -e $Cache) {
-    open my $test, ">", $cache;
+    open my $test, ">", $Cache;
 
     if (not defined $test) {
         die "the cache can't be accessed.";

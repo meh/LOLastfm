@@ -30,8 +30,8 @@ src_install() {
 	cd ${WORKDIR}/$(ls)
 
 	if use small; then
-		mv bin/LOLastfm-small.pl LOLastfm-small
-		dobin LOLastfm-small
+		mv bin/LOLastfm-small.pl LOLastfm
+		dobin LOLastfm
 	else
 		mv bin/LOLastfm.pl LOLastfm
 		dobin LOLastfm

@@ -40,7 +40,7 @@ if (defined $options{s} || defined $Config->{services}) {
 
 our $Cache   : shared;
 our $Tick    : shared;
-our $Seconds : shared;
+our $Scrobblable : shared;
 
 if (ref ($Cache = $options{C} || $Config->{cache}) eq 'HASH') {
     $Cache = '';
@@ -49,8 +49,8 @@ elsif ($Cache && not -e $Cache) {
     die "The cache can't be accessed.";
 }
 
-$Tick    = $options{T} || $Config->{tick} || 5;
-$Seconds = $options{S} || $Config->{seconds} || "length - 20";
+$Tick        = $options{T} || $Config->{tick} || 5;
+$Scrobblable = $options{S} || $Config->{seconds} || "seconds >= length - 20";
 
 $Player::name = $options{P} || $Config->{player};
 Player::init($Player::name);
@@ -201,16 +201,17 @@ sub equal {
 }
 
 sub isScrobblable {
-    my $song    = shift;
-    my $seconds = $Seconds;
+    my $song        = shift;
+    my $scrobblable = $Scrobblable;
 
     if (!$song) {
         return 0;
     }
     
-    $seconds =~ s/length/$song->{length}/;
+    $scrobblable =~ s/length/$song->{length}/;
+    $scrobblable =~ s/seconds/$song->{seconds}/;
 
-    if ($song->{seconds} >= eval($seconds)) {
+    if (eval($scrobblable)) {
         return 1;
     }
     else {
@@ -902,8 +903,8 @@ sub set {
         Player::init($Player::name);
         $Song::NowPlaying = 0;
     }
-    elsif ($name eq 'seconds') {
-        $::Seconds = $data;
+    elsif ($name eq 'scrobblable') {
+        $::Scrobblable = $data;
     }
     elsif ($name eq 'tick') {
         $::Tick = $data;

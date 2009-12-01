@@ -41,7 +41,7 @@ elsif ($Cache && not -e $Cache) {
 }
 
 our $Tick    = $options{T} || $Config->{tick} || 5;
-our $Seconds = $options{S} || $Config->{seconds} || "length - 20";
+our $Scrobblable = $options{S} || $Config->{seconds} || "length - 20";
 
 $Player::name = $options{P} || $Config->{player};
 Player::init($Player::name);
@@ -192,16 +192,17 @@ sub equal {
 }
 
 sub isScrobblable {
-    my $song    = shift;
-    my $seconds = $Seconds;
+    my $song        = shift;
+    my $scrobblable = $Scrobblable;
 
     if (!$song) {
         return 0;
     }
     
-    $seconds =~ s/length/$song->{length}/;
+    $scrobblable =~ s/length/$song->{length}/;
+    $scrobblable =~ s/seconds/$song->{seconds}/;
 
-    if ($song->{seconds} >= eval($seconds)) {
+    if (eval($scrobblable)) {
         return 1;
     }
     else {

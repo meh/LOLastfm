@@ -40,6 +40,7 @@ src_install() {
 	mv bin/LOLastfm-set.pl LOLastfm-set
 	dobin LOLastfm-set
 
+	exeinto /etc/init.d
 	doexe etc/init.d/LOLastfm
 
 	insinto /etc
@@ -52,5 +53,7 @@ src_install() {
 
 	ewarn "Remember to install from CPAN Net::LastFM::Submission."
 	ewarn ""
-	ewarn "If you use MPD install Audio::MPD too."
+	ewarn "If you use MPD install Audio::MPD."
+	ewarn "If you use Amarok install DCOP::Amarok::Player."
+	ewarn "If you use an unsupported player emerge sys-process/lsof."
 }

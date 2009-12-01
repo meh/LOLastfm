@@ -47,6 +47,10 @@ cpan> install Net::LastFM::Submission
 cpan> install XML::Simple
 --
 
+If it whines about can't locating something install what it asks because either the faggot package didn't install dependencies or you failed at configuring CPAN.
+
+Note: if you run it as user after installing something as root you have to chmod -R o+rx /usr/lib/perl5 or it will still whine.
+
 And then you can *make install* it (as root) :)
 
 LOLastfm -h for the options or use the /etc/init.d/LOLastfm (only for Gentoo and runscript compliant distros), or the general daemon in etc/rc.d/ :)

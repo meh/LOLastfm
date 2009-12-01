@@ -22,7 +22,7 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
-my $Version = '0.4.1';
+my $Version = '0.4.2';
 
 my %options;
 getopts('hf:s:u:p:C:P:S:T:E:', \%options);
@@ -46,7 +46,11 @@ if (ref ($Cache = $options{C} || $Config->{cache}) eq 'HASH') {
     $Cache = '';
 }
 elsif ($Cache && not -e $Cache) {
-    die "The cache can't be accessed.";
+    open my $test, ">", $cache;
+
+    if (not defined $test) {
+        die "the cache can't be accessed.";
+    }
 }
 
 $Tick        = $options{T} || $Config->{tick} || 5;

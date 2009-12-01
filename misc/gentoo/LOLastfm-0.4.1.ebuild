@@ -29,12 +29,12 @@ src_unpack() {
 src_install() {
 	cd ${WORKDIR}/$(ls)
 
-	mv bin/LOLastfm.pl LOLastfm
-	dobin LOLastfm
-
 	if use small; then
 		mv bin/LOLastfm-small.pl LOLastfm-small
 		dobin LOLastfm-small
+	else
+		mv bin/LOLastfm.pl LOLastfm
+		dobin LOLastfm
 	fi
 
 	mv bin/LOLastfm-set.pl LOLastfm-set

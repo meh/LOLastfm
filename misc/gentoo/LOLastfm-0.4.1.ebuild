@@ -16,8 +16,8 @@ KEYWORDS="amd64 x86"
 IUSE="small"
 
 DEPEND="
-!small ( >=dev-lang/perl-5.8.1[ithreads] )
- small ( dev-lang/perl )
+!small? ( >=dev-lang/perl-5.8.1[ithreads] )
+ small? ( dev-lang/perl )
 "
 RDEPEND="${DEPEND}"
 

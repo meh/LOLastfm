@@ -10,26 +10,26 @@ depends=('perl')
 options=('!emptydirs')
 source=(http://github.com/meh/LOLastfm/tarball/LOLastfm-$pkgver)
 noextract=(http://github.com/meh/LOLastfm/tarball/LOLastfm-$pkgver)
-md5sums=()
+md5sums=('f23283141ed6c621bc05f89f0196dcfe')
 
 build() {
     cd "$startdir/src"
     tar xfv $(ls)
     cd $(ls | grep meh)
 
-    mkdir -p $startdir/pkg/bin
+    mkdir -p $startdir/pkg/usr/bin
     mkdir -p $startdir/pkg/etc
     mkdir -p $startdir/pkg/etc/rc.d
     mkdir -p $startdir/pkg/var/lib/LOLastfm
 
-    cp bin/LOLastfm.pl $startdir/pkg/bin/LOLastfm
-    chmod o+rx $startdir/pkg/bin/LOLastfm
+    cp bin/LOLastfm.pl $startdir/pkg/usr/bin/LOLastfm
+    chmod o+rx $startdir/pkg/usr/bin/LOLastfm
 
-    cp bin/LOLastfm-set.pl $startdir/pkg/bin/LOLastfm-set
-    chmod o+rx $startdir/pkg/bin/LOLastfm-set
+    cp bin/LOLastfm-set.pl $startdir/pkg/usr/bin/LOLastfm-set
+    chmod o+rx $startdir/pkg/usr/bin/LOLastfm-set
 
-    cp etc/rc.d/LOLastfm $startdir/pkg/etc/rc.d
-    chmod +x $startdir/pkg/etc/rc.d
+    cp etc/rc.d/LOLastfm $startdir/pkg/etc/rc.d/LOLastfm
+    chmod +x $startdir/pkg/etc/rc.d/LOLastfm
 
     cp etc/LOLastfm.xml $startdir/pkg/etc/LOLastfm.xml
 }

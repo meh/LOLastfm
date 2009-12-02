@@ -25,7 +25,7 @@ mpg123     - Couldn't run it (lol) but I guess it will work as mpg321.
 audacious  - Works like a charm.
 
 Features:
-Player independant, supported players are listed below.
+Player independant, supported players are listed above.
 Supports the "Listening Now" last.fm function.
 Supports caching of listenings when there are connection/server problems and sends them when possible.
 Submits multiple times when listening repeatedly to the same song.

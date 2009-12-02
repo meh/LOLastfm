@@ -20,7 +20,7 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
-my $Version = '0.4.2';
+my $Version = '0.4.3';
 
 my %options;
 getopts('hf:s:u:p:C:P:S:T:E:', \%options);
@@ -805,17 +805,17 @@ LOLastfm-small $Version
 
 Usage: LOLastfm-small [options]
 
--h          : show this help.
--f file     : use the given file as config file
+-h             : show this help.
+-f file        : use the given file as config file
 
--u user     : use the given username instead of the config one
--p password : use the given password instead of the config one
+-u user        : use the given username instead of the config one
+-p password    : use the given password instead of the config one
 
--C cache    : use the given cache as caching file
--P player   : use the given player as scrobbling one (moc, mpd, mp3blaster, rhythmbox, amarok)
--S seconds  : sends the song as listened when you got past (songLength - seconds)
--T tick     : check informations again every tick seconds
--E encoding : encoding to automatically encode from, last.fm needs utf8 strings
+-C cache       : use the given cache as caching file
+-P player      : use the given player as scrobbling one (moc, mpd, mp3blaster, rhythmbox, amarok, others)
+-S scrobblable : sends the song as listened if the expression is true (seconds = current listened seconds; length = song's length)
+-T tick        : check informations again every tick seconds
+-E encoding    : encoding to automatically encode from, last.fm needs utf8 strings
 USAGE
 }
 

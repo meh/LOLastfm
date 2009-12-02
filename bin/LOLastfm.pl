@@ -787,7 +787,7 @@ our $command : shared;
 
 sub init {
     $name    = shift;
-    $command = "lsof -c $name | egrep -i '\\.(mp3|ogg|m4a|m4b|m4p|mp4|3gp|flac)'";
+    $command = "lsof -c $name | egrep -i '\\.(mp3|ogg|m4a|m4b|m4p|mp4|3gp|flac)$$'";
     $inited  = 1;
 }
 

@@ -1,6 +1,7 @@
 lololololololol last.fm
 
 Warning: if you want to use the full version you need Perl installed with threads, there's LOLastfm-small if you don't want to install threads.
+Warning: it has some problems with some italian letters, eg: èàò and it's being hard to fix, unicode is ok though, japanese goes all right :)
 
 LOLastfm-small doesn't have any Service, the rest is exactly as LOLastfm.
 

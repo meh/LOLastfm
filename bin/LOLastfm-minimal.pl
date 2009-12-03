@@ -218,15 +218,22 @@ sub fromFile {
     require Music::Tag;
 
     my $path = shift;
+    my $pid  = shift;
     my $song = {};
 
     if ($Old && defined $Old->{path} && $Old->{path} eq $path) {
-        my %copy = %{$Old};
-           $song = \%copy;
+        if (defined $Old->{pid} && defined $pid && $Old->{pid} == $pid) {
+            my %copy = %{$Old};
+               $song = \%copy;
 
-        $song->{seconds} += $Tick;
-        $song->{time}     = time() - $song->{length};
-        return $song;
+            $song->{seconds} += $Tick;
+            $song->{time}     = time() - $song->{length};
+            return $song;
+        }
+    }
+
+    if (defined $pid) {
+        $song->{pid} = $pid;
     }
 
     my $file = new Music::Tag($path);
@@ -778,7 +785,7 @@ our $command;
 
 sub init {
     $name    = shift;
-    $command = "lsof -c $name | egrep -i '\\.(mp3|ogg|m4a|m4b|m4p|mp4|3gp|flac)'";
+    $command = "lsof -c $name | egrep -i '\\.(mp3|ogg|m4a|m4b|m4p|mp4|3gp|flac)\$'";
     $inited  = 1;
 }
 
@@ -789,8 +796,8 @@ sub currentSong {
         return 0;
     }
 
-    if ($output =~ m{\d+\s+(\/.+)$}) {
-        return Song::fromFile($1);
+    if ($output =~ m{\w+\s*(\d+).+?\d+\s+(\/.+)$}) {
+        return Song::fromFile($2, $1);
     }
     else {
         return 0;
@@ -801,9 +808,9 @@ package Misc;
 
 sub usage {
     return << "USAGE";
-LOLastfm-small $Version
+LOLastfm-minimal $Version
 
-Usage: LOLastfm-small [options]
+Usage: LOLastfm-minimal [options]
 
 -h             : show this help.
 -f file        : use the given file as config file

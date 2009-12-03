@@ -24,8 +24,8 @@
     <tick>5</tick>
 
     <!-- Sends the song as listened if the expression is true -->
-    <!-- seconds = current listened seconds                             -->
-    <!-- length  = song's length                                        -->
+    <!-- seconds = current listened seconds                   -->
+    <!-- length  = song's length                              -->
     <seconds>seconds => length - 20</seconds>
 
     <!-- Encoding to automatically encode from, last.fm needs utf8 strings -->
@@ -69,8 +69,4 @@
         <!-- Same thing as moc -->
         <!-- <as>user</as> -->
     </amarok>
-
-    <mplayer>
-        <alias>mplayer</alias>
-    </mplayer>
 </config>

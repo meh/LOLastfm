@@ -3,7 +3,7 @@ all:
 
 install:
 	cp bin/LOLastfm.pl /usr/bin/LOLastfm
-	cp bin/LOLastfm-small.pl /usr/bin/LOLastfm-small
+	cp bin/LOLastfm-minimal.pl /usr/bin/LOLastfm-minimal
 	cp bin/LOLastfm-set.pl /usr/bin/LOLastfm-set
 	mkdir -p /var/lib/LOLastfm
 	touch /var/lib/LOLastfm/cache

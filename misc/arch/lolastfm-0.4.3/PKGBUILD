@@ -1,6 +1,6 @@
 # Contributor: meh. <meh.ffff@gmail.com>
-pkgname=LOLastfm
-pkgver=0.4.2
+pkgname=lolastfm
+pkgver=0.4.3
 pkgrel=1
 pkgdesc="last.fm scrobbler for everything."
 arch=(any)
@@ -14,8 +14,8 @@ md5sums=('f23283141ed6c621bc05f89f0196dcfe')
 
 build() {
     cd "$startdir/src"
-    tar xfv $(ls)
-    cd $(ls | grep meh)
+    tar xfv *
+    cd meh-*
 
     mkdir -p $startdir/pkg/usr/bin
     mkdir -p $startdir/pkg/etc

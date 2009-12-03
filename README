@@ -1,6 +1,6 @@
 lololololololol last.fm
 
-Warning: if you want to use the full version you need Perl installed with threads, there's LOLastfm-small if you don't want to install threads.
+Warning: if you want to use the full version you need Perl installed with threads, there's LOLastfm-minimal if you don't want to install threads.
 Warning: it has some problems with some italian letters, eg: èàò and it's being hard to fix, unicode is ok though, japanese goes all right :)
 
 LOLastfm-small doesn't have any Service, the rest is exactly as LOLastfm.
@@ -11,17 +11,17 @@ MPD        - Full support, might hang if the connection with the server dies.
 mp3blaster - Nearly full support. Doesn't support song repeating submits, it's a problem of mp3blaster.
 Rhythmbox  - Full support.
 Amarok     - Full support.
-Others     - Have the same problem of mp3blaster, see below for more informations.
+Others     - Have the same problem of mp3blaster, see below for more informations. (Some player don't, the one that play the song, then close and then reopen themselves)
 
 For others I mean just put the binary name of the player and see if it works, it probably will :)
 
 Tested (and working) others: { if you test a player send me an email and I'll add it here }
-mplayer    - Works like a charm.
+mplayer    - Works like a charm. Supports repeating submits.
 totem      - If you listen to one song you have to play another one or quit totem to scrobble, it's a totem's bug.
 vlc        - Works like a charm.
-alsaplayer - Works like a charm.
+alsaplayer - Works like a charm. Supports repeating submits.
 songbird   - Works like a charm.
-mpg321     - Works like a charm.
+mpg321     - Works like a charm. Supports repeating submits.
 mpg123     - Couldn't run it (lol) but I guess it will work as mpg321.
 audacious  - Works like a charm.
 

@@ -1,9 +1,9 @@
 lololololololol last.fm
 
 Warning: if you want to use the full version you need Perl installed with threads, there's LOLastfm-minimal if you don't want to install threads.
-Warning: it has some problems with some italian letters, eg: èàò and it's being hard to fix, unicode is ok though, japanese goes all right :)
+Warning: it can't send unicode tags without patching a file, look for Net/LastFM/Submission.pm and comment line 218 |Encode::_utf8_off($data);|
 
-LOLastfm-small doesn't have any Service, the rest is exactly as LOLastfm.
+LOLastfm-minimal doesn't have any Service, the rest is exactly as LOLastfm.
 
 Supported players:
 MOC        - Full support.

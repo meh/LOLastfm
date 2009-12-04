@@ -38,9 +38,10 @@ if (defined $options{s} || defined $Config->{services}) {
     Services::init($options{s} || $Config->{services});
 }
 
-our $Cache   : shared;
-our $Tick    : shared;
+our $Cache       : shared;
+our $Tick        : shared;
 our $Scrobblable : shared;
+our $Encoding    : shared;
 
 if (ref ($Cache = $options{C} || $Config->{cache}) eq 'HASH') {
     $Cache = '';
@@ -52,6 +53,8 @@ elsif ($Cache && not -e $Cache) {
         die "the cache can't be accessed.";
     }
 }
+
+$Encoding = $options{E} || $Config->{encoding};
 
 $Tick        = $options{T} || $Config->{tick} || 5;
 $Scrobblable = $options{S} || $Config->{seconds} || "seconds >= length - 20";
@@ -70,7 +73,7 @@ if (defined $User && defined $Password) {
         user     => $User,
         password => $Password,
 
-        enc => $options{E} || $Config->{encoding} || 'utf8',
+        enc => $Encoding || 'utf8',
 
         client_id  => 'lol',
         client_ver => $Version,
@@ -211,7 +214,7 @@ sub isScrobblable {
     if (!$song) {
         return 0;
     }
-    
+
     $scrobblable =~ s/length/$song->{length}/;
     $scrobblable =~ s/seconds/$song->{seconds}/;
 
@@ -310,7 +313,7 @@ sub get {
             my @data = split /$1/, $2;
             CORE::push @songs, { title => $data[0], album => $data[1], artist => $data[2], length => $data[3], time => $data[4] };
         }
-        
+
         if (++$counter >= $number) {
             last;
         }
@@ -337,7 +340,7 @@ sub flush {
     }
     my @rest = <$cache>;
     close $cache;
-    
+
     open $cache, ">", $Cache;
     for my $line (@rest) {
         print $cache $line;

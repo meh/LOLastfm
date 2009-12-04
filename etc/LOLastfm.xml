@@ -28,8 +28,9 @@
     <!-- length  = song's length                              -->
     <seconds>seconds => length - 20</seconds>
 
-    <!-- Encoding to automatically encode from, last.fm needs utf8 strings -->
-    <encoding>utf8</encoding>
+    <!-- Uncomment if your tags are encoded in a different encoding, and set it to your encoding -->
+    <!-- If you use utf8 and set it to utf8 it will get borked hard.                             -->
+    <!-- <encoding>iso-8859-1</encoding> -->
 
     <!-- Path to the cache file, if no file is given it won't cache listenings -->
     <cache>/var/lib/LOLastfm/cache</cache>

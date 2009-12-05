@@ -20,7 +20,7 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
-my $Version = '0.4.3';
+my $Version = '0.4.4';
 
 my %options;
 getopts('hf:s:u:p:C:P:S:T:E:', \%options);
@@ -297,7 +297,7 @@ sub get {
 
     open my $cache, "<", $Cache;
     while (<$cache>) {
-        my $line = chomp($_);
+        my $line = $_;
 
         if ($line =~ m{^(.+): (.+)$}) {
             my @data = split /$1/, $2;

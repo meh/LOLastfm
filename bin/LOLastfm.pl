@@ -22,7 +22,7 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
-my $Version = '0.4.3';
+my $Version = '0.4.4';
 
 my %options;
 getopts('hf:s:u:p:C:P:S:T:E:', \%options);
@@ -93,9 +93,11 @@ while (1) {
     $New = Player::currentSong();
 
     if (!$New) {
-        if (Song::isScrobblable($Old)) {
-            Song::submit($Old);
-            $Old = 0;
+        if ($Old) {
+            if (Song::isScrobblable($Old)) {
+                Song::submit($Old);
+                $Old = 0;
+            }
         }
     }
     else {
@@ -307,7 +309,7 @@ sub get {
 
     open my $cache, "<", $Cache;
     while (<$cache>) {
-        my $line = chomp($_);
+        my $line = $_;
 
         if ($line =~ m{^(.+): (.+)$}) {
             my @data = split /$1/, $2;

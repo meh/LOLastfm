@@ -10,7 +10,7 @@ depends=('perl')
 options=('!emptydirs')
 source=(http://github.com/meh/LOLastfm/tarball/LOLastfm-$pkgver)
 noextract=(http://github.com/meh/LOLastfm/tarball/LOLastfm-$pkgver)
-md5sums=('f23283141ed6c621bc05f89f0196dcfe')
+md5sums=('e46eef70882aa736182f8eb4857da7c4')
 
 build() {
     cd "$startdir/src"

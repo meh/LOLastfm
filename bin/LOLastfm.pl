@@ -32,7 +32,7 @@ if ($options{h}) {
     exit;
 }
 
-our $Config = XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray => [ 'service' ]);
+our $Config : shared = shared_clone(XMLin($options{f} || '/etc/LOLastfm.xml', KeyAttr => 1, ForceArray => [ 'service' ]));
 
 if (defined $options{s} || defined $Config->{services}) {
     Services::init($options{s} || $Config->{services});

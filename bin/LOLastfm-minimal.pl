@@ -20,7 +20,7 @@ use Getopt::Std;
 use XML::Simple qw(:strict);
 use Net::LastFM::Submission;
 
-my $Version = '0.4.4';
+my $Version = '0.4.4.1';
 
 my %options;
 getopts('hf:s:u:p:C:P:S:T:E:', \%options);

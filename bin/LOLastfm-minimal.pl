@@ -457,15 +457,17 @@ package Player::MOC;
 
 our $inited;
 our $command;
+our $keep;
 
 sub init {
     $command = 'mocp -i';
 
     if ($Config->{moc}->{as}) {
-        $command = "su -c '$command' $Config->{moc}->{as}";
+        $command = "$command -M '/home/$Config->{moc}->{as}/.moc'";
     }
 
     $inited = 1;
+    $keep   = {};
 }
 
 sub currentSong {
@@ -509,14 +511,22 @@ sub currentSong {
         $song->{time}    = time() - $1;
     }
     else {
-        $song->{seconds} = '';
+        $song->{seconds} = 0;
     }
 
     if ($output =~ m{TotalSec: (.+)$}m) {
         $song->{length} = $1;
     }
     else {
-        return 0; # if there's not length we can't do anything.
+        if ($keep->{title} != $song->{title}) {
+            $keep->{title} = $song->{title}
+            $keep->{time}  = time();
+        }
+
+        $song->{length} = time() - $keep->{time};
+
+        $song->{seconds} = $song->{length} - 1;
+        $song->{time}    = $keep->{time};
     }
 
     $song->{source} = 'P';

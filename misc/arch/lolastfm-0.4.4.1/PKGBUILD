@@ -15,7 +15,7 @@ optdepends=('perl-music-tag: support other players'
 options=('!emptydirs')
 source=(http://github.com/meh/LOLastfm/tarball/LOLastfm-$pkgver)
 noextract=(http://github.com/meh/LOLastfm/tarball/LOLastfm-$pkgver)
-md5sums=('cda8328bb565d1edcae1cb1a1f7b7380')
+md5sums=('fbcf5d0edc90160dc6ecbf9a6c277bfb')
 
 build() {
     cd "$startdir/src"

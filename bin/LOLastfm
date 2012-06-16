@@ -1,0 +1,39 @@
+#! /usr/bin/env ruby
+require 'optparse'
+require 'LOLastfm'
+
+OptionParser.new do |o|
+	o.on '-a', '--auth', 'authorize LOLastfm to work' do
+		lastfm = Lastfm.new('5f7b134ba19b20536a5e29bc86ae64c9', '3b50e74d989795c3f4b3667c5a1c8e67')
+		token  = lastfm.auth.get_token
+
+		puts "Go to the following URL, allow LOLastfm and press Enter to continue..."
+		puts ""
+		puts "    http://www.last.fm/api/auth/?api_key=5f7b134ba19b20536a5e29bc86ae64c9&token=#{token}"
+
+		gets
+
+		puts "Use #{lastfm.auth.get_session(token)['key']} as session in your LOLastfm configuration."
+		exit
+	end
+
+	o.on '-v', '--version', 'show version and exit' do
+		puts "LOLastfm #{LOLastfm.version}"
+		exit
+	end
+end.parse!
+
+EM.run {
+	d = LOLastfm.load(ARGV.first || '~/.lolastfm')
+	d.start
+
+	%w[INT KILL].each {|sig|
+		trap sig do
+			puts 'LOLastfm stopping...'
+
+			d.stop
+
+			EM.stop_event_loop
+		end
+	}
+}

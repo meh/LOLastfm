@@ -20,13 +20,13 @@ class Connection < EventMachine::Protocols::LineAndTextProtocol
 
 		case command.upcase.to_sym
 		when :LISTENED
-			fm.listened(*arguments)
+			fm.listened(arguments)
 
 		when :NOW_PLAYING
-			fm.now_playing(*arguments)
+			fm.now_playing(arguments)
 
 		when :LOVE
-			fm.love(*arguments)
+			fm.love(arguments)
 
 		when :NEXT?
 			fm.on :now_playing do |song|
@@ -35,6 +35,9 @@ class Connection < EventMachine::Protocols::LineAndTextProtocol
 				:delete
 			end
 		end
+	rescue => e
+		$stderr.puts e.to_s
+		$stderr.puts e.backtrace
 	end
 end
 

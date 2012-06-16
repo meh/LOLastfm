@@ -51,10 +51,12 @@ class LOLastfm
 	def cache_at (path)
 		@cache_at = File.expand_path(path)
 
-		@cache.load(@cache_at)
+		if File.exists? @cache_at
+			@cache.load(@cache_at)
+		end
 	end
 
-	def listen (host, port)
+	def listen (host = '0.0.0.0', port)
 		@servers << EM.start_server(host, port, LOLastfm::Connection) {|conn|
 			conn.fm = self
 		}
@@ -68,16 +70,16 @@ class LOLastfm
 		@session.session
 	end
 
-	def now_playing (*args)
-		song = args.first.is_a?(Song) ? args.first : Song.new(*args)
+	def now_playing (song)
+		song = Song.new(song) unless song.is_a?(Song)
 
 		fire :now_playing, song
 
-		@session.track.update_now_playing(song.title, song.artist)
+		@session.track.update_now_playing(song.artist, song.title)
 	end
 
-	def listened (*args)
-		song = args.first.is_a?(Song) ? args.first : Song.new(*args)
+	def listened (song)
+		song = Song.new(song) unless song.is_a?(Song)
 
 		fire :listened, song
 
@@ -97,8 +99,9 @@ class LOLastfm
 		false
 	end
 
-	def love (*args)
-		song = args.first.is_a?(Song) ? args.first : args.empty? ? @listened : Song.new(*args)
+	def love (song = nil)
+		song = @listened unless song
+		song = Song.new(song) unless song.is_a? Song
 
 		fire :love, song
 

@@ -19,7 +19,7 @@ class Song
 	attr_reader :track, :title, :album, :artist, :length, :listened_at, :path, :id
 
 	def initialize (data)
-		data = Hash[args.first.map { |key, value| [key.to_sym, value] }]
+		data = Hash[data.map { |key, value| [key.to_sym, value] }]
 
 		@track       = data[:track]
 		@title       = data[:title]

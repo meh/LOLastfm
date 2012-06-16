@@ -1,0 +1,69 @@
+#! /usr/bin/env ruby
+require 'optparse'
+require 'socket'
+require 'json'
+
+options = {}
+
+OptionParser.new do |o|
+	options[:host] = 'localhost'
+	options[:port] = 40506
+	options[:song] = {}
+
+	o.on '--listened', 'enable listened sending' do
+		options[:listened] = true
+	end
+
+	o.on '--now-playing', 'enable now playing sending' do
+		options[:now_playing] = true
+	end
+
+	o.on '--love', 'enable love sending' do
+		options[:love] = true
+	end
+
+	o.on '-t', '--title TITLE', 'title of the song' do |value|
+		options[:song][:title] = value
+	end
+
+	o.on '-a', '--artist ARTIST', 'the artist of the song' do |value|
+		options[:song][:artist] = value
+	end
+
+	o.on '-A', '--album ALBUM', 'the album of the song' do |value|
+		options[:song][:album] = value
+	end
+
+	o.on '-l', '--length LENGTH', Integer, 'the length of the song in seconds' do |value|
+		options[:song][:length] = value
+	end
+
+	o.on '-L', '--listened-at DATE', 'the time when the song has started playing' do |value|
+		options[:song][:listened_at] = value
+	end
+
+	o.on '-p', '--path PATH', 'the path of the song' do |value|
+		options[:song][:path] = value
+	end
+
+	o.on '-i', '--id ID', 'the MusicBrainz id of the song' do |value|
+		options[:song][:id] = value
+	end
+end.parse!
+
+if ARGV.first
+	options[:host], options[:port] = ARGV.split(':')
+end
+
+socket = TCPSocket.new(options[:host], options[:port].to_i)
+
+if options[:now_playing]
+	socket.puts [:now_playing, options[:song]].to_json
+elsif options[:love]
+	socket.puts [:love, options[:song]].to_json
+else
+	socket.puts [:listened, options[:song]].to_json
+end
+
+socket.flush
+socket.close

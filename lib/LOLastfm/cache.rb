@@ -53,19 +53,19 @@ class Cache
 	end
 
 	def load (path)
-		data = YAML.parse_file(path)
+		data = YAML.parse_file(path).transform
 
 		data['listened'].each {|song|
-			listened(Song.new(song.transform))
+			listened(Song.new(song))
 		}
 
 		data['loved'].each {|song|
-			love(Song.new(song.transform))
+			love(Song.new(song))
 		}
 	end
 
 	def to_yaml
-		{ 'listened' => @listened.map(&:to_hash).to_yaml, 'loved' => @loved.map(&:to_hash).to_yaml }
+		{ 'listened' => @listened.map(&:to_hash), 'loved' => @loved.map(&:to_hash) }.to_yaml
 	end
 end
 

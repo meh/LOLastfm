@@ -18,6 +18,8 @@ class Connection < EventMachine::Protocols::LineAndTextProtocol
 	def receive_line (line)
 		command, arguments = JSON.parse(line)
 
+		puts [command, arguments].inspect
+
 		case command.upcase.to_sym
 		when :LISTENED
 			fm.listened(arguments)
@@ -27,6 +29,12 @@ class Connection < EventMachine::Protocols::LineAndTextProtocol
 
 		when :LOVE
 			fm.love(arguments)
+
+		when :HINT
+			fm.hint(*arguments)
+
+		when :NOW_PLAYING?
+			send_data fm.now_playing?.to_json
 
 		when :NEXT?
 			fm.on :now_playing do |song|

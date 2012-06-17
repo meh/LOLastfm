@@ -15,20 +15,26 @@ require 'LOLastfm/version'
 require 'LOLastfm/cache'
 require 'LOLastfm/connection'
 require 'LOLastfm/song'
+require 'LOLastfm/checker'
 
 class LOLastfm
+	@@checkers = {}
+
 	def self.load (path)
 		new.tap { |o| o.load(path) }
+	end
+
+	def self.define_checker (name, &block)
+		@@checkers[name] = block
 	end
 
 	attr_reader :cache
 
 	def initialize
 		@session = Lastfm.new('5f7b134ba19b20536a5e29bc86ae64c9', '3b50e74d989795c3f4b3667c5a1c8e67')
-
 		@cache   = Cache.new(self)
-		@events  = Hash.new { |h, k| h[k] = [] }
-		@servers = []
+
+		cache_at '~/.LOLastfm.cache'
 	end
 
 	def load (path)
@@ -36,16 +42,20 @@ class LOLastfm
 	end
 
 	def start
+		@server = EM.start_server(@host || '0.0.0.0', @port || 40506, LOLastfm::Connection) {|conn|
+			conn.fm = self
+		}
+
+		@timer = EM.add_periodic_timer 360 do
+			save
+		end
 	end
 
 	def stop
-		@servers.each { |s| EM.stop_server s }
+		EM.stop_server @server
+		EM.cancel_timer @timer
 	ensure
-		if @cache_at
-			File.open(@cache_at, 'w') {|f|
-				f.write(@cache.to_yaml)
-			}
-		end
+		save
 	end
 
 	def cache_at (path)
@@ -56,10 +66,17 @@ class LOLastfm
 		end
 	end
 
+	def save
+		if @cache_at
+			File.open(@cache_at, 'w') {|f|
+				f.write(@cache.to_yaml)
+			}
+		end
+	end
+
 	def listen (host = '0.0.0.0', port)
-		@servers << EM.start_server(host, port, LOLastfm::Connection) {|conn|
-			conn.fm = self
-		}
+		@host = host
+		@port = port
 	end
 
 	def session (key)
@@ -73,7 +90,8 @@ class LOLastfm
 	def now_playing (song)
 		song = Song.new(song) unless song.is_a?(Song)
 
-		fire :now_playing, song
+		@song.call(song) if @song
+		@now_playing = song
 
 		@session.track.update_now_playing(song.artist, song.title)
 	end
@@ -81,9 +99,9 @@ class LOLastfm
 	def listened (song)
 		song = Song.new(song) unless song.is_a?(Song)
 
-		fire :listened, song
-
+		@song.call(song) if @song
 		@cache.flush!
+		@now_playing = nil
 
 		unless listened! song
 			@cache.listened(song)
@@ -92,7 +110,7 @@ class LOLastfm
 
 	def listened! (song)
 		@session.track.scrobble(song.artist, song.title, song.listened_at, song.album, song.track, song.id, song.length)
-		@listened = song
+		@last_played = song
 
 		true
 	rescue
@@ -100,10 +118,10 @@ class LOLastfm
 	end
 
 	def love (song = nil)
-		song = @listened unless song
+		song = @last_played or return unless song
 		song = Song.new(song) unless song.is_a? Song
 
-		fire :love, song
+		@song.call(song) if @song
 
 		unless love! song
 			@cache.love(song)
@@ -118,21 +136,35 @@ class LOLastfm
 		false
 	end
 
-	def on (event, &block)
-		@events[event] << block
+	def now_playing?
+		@now_playing
 	end
 
-	def fire (event, *args)
-		delete = []
+	def last_played?
+		@last_played
+	end
 
-		@events[event].each {|event|
-			result = event.call(*args)
+	def checker (*args, &block)
+		if args.first.is_a? Symbol
+			block = @@checkers[args.shift]
+		end
 
-			if result == :delete
-				delete << event
-			end
-		}
+		raise LocalJumpError, 'no block given' unless block
 
-		@events[event] -= delete
+		@checker = Checker.new(fm, name, args.shift, &block)
+		@checker.start
+	end
+
+	def hint (*args)
+		return unless @checker
+
+		@checker.hint(*args)
+	end
+
+	def song (&block)
+		@song = block
 	end
 end
+
+require 'LOLastfm/checkers/moc'
+require 'LOLastfm/checkers/cmus'

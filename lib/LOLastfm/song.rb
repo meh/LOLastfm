@@ -21,11 +21,11 @@ class Song
 	def initialize (data)
 		data = Hash[data.map { |key, value| [key.to_sym, value] }]
 
-		@track       = data[:track]
+		@track       = data[:track] && data[:track].to_i
 		@title       = data[:title]
 		@album       = data[:album]
 		@artist      = data[:artist]
-		@length      = data[:length]
+		@length      = data[:length] && data[:length].to_i
 		@listened_at = data[:listened_at]
 		@path        = data[:path]
 		@id          = data[:id]
@@ -36,7 +36,7 @@ class Song
 				@title  = f.tag.title unless @title
 				@album  = f.tag.album unless @album
 				@artist = f.tag.artist unless @artist
-				@length = f.properties.length unless @length
+				@length = f.properties.length.to_i unless @length
 
 				unless @id
 					TagLib::MPEG::File.new(@path).tap {|file|
@@ -66,12 +66,20 @@ class Song
 			}
 		end
 
+		if @length && @length < 0
+			stream!
+			@length = nil
+		end
+
 		if @listened_at
 			@listened_at = @listened_at.is_a?(String) ? DateTime.parse(@listened_at) : @listened_at.to_datetime
 		elsif @length
 			@listened_at = DateTime.now - @length
 		end
 	end
+
+	def stream?; @stream;        end
+	def stream!; @stream = true; end
 
 	def to_hash
 		{

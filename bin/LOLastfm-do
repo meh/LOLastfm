@@ -60,7 +60,7 @@ socket = TCPSocket.new(options[:host], options[:port].to_i)
 if options[:now_playing]
 	socket.puts [:now_playing, options[:song]].to_json
 elsif options[:love]
-	socket.puts [:love, options[:song]].to_json
+	socket.puts [:love, options[:song].empty? ? nil : options[:song]].to_json
 else
 	socket.puts [:listened, options[:song]].to_json
 end

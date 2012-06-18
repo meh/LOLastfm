@@ -33,6 +33,7 @@ class LOLastfm
 	def initialize
 		@session = Lastfm.new('5f7b134ba19b20536a5e29bc86ae64c9', '3b50e74d989795c3f4b3667c5a1c8e67')
 		@cache   = Cache.new(self)
+    @events  = Hash.new { |h, k| h[k] = [] }
 
 		cache_at '~/.LOLastfm.cache'
 	end
@@ -91,7 +92,8 @@ class LOLastfm
 	def now_playing (song)
 		song = Song.new(song) unless song.is_a?(Song)
 
-		@song.call(song) if @song
+		fire :now_playing, song
+
 		@now_playing = song
 
 		@session.track.update_now_playing(song.artist, song.title)
@@ -100,7 +102,8 @@ class LOLastfm
 	def listened (song)
 		song = Song.new(song) unless song.is_a?(Song)
 
-		@song.call(song) if @song
+		fire :listened, song
+
 		@cache.flush!
 		@now_playing = nil
 
@@ -122,7 +125,7 @@ class LOLastfm
 		song = @last_played or return unless song
 		song = Song.new(song) unless song.is_a? Song
 
-		@song.call(song) if @song
+		fire :love, song
 
 		unless love! song
 			@cache.love(song)
@@ -161,8 +164,22 @@ class LOLastfm
 		@checker.hint(*args)
 	end
 
-	def song (&block)
-		@song = block
+	def on (event, &block)
+		@events[event] << block
+	end
+
+	def fire (event, *args)
+		delete = []
+
+		@events[event.to_sym].each {|event|
+			result = event.call(*args)
+
+			if result == :delete
+				delete << event
+			end
+		}
+
+		@events[event] -= delete
 	end
 end
 

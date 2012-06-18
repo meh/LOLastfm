@@ -1,0 +1,13 @@
+#! /usr/bin/env ruby
+require 'socket'
+require 'json'
+
+args = Hash[*ARGV]
+
+exit unless args['url']
+
+UNIXSocket.new(File.expand_path('~/.LOLastfm.socket')).tap {|socket|
+	socket.puts [:hint, args['title']].to_json
+	socket.flush
+	socket.close
+}

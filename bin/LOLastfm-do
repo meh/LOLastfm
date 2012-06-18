@@ -6,8 +6,7 @@ require 'json'
 options = {}
 
 OptionParser.new do |o|
-	options[:host] = 'localhost'
-	options[:port] = 40506
+	options[:socket] = '~/.LOLastfm.socket'
 	options[:song] = {}
 
 	o.on '--listened', 'enable listened sending' do
@@ -52,10 +51,10 @@ OptionParser.new do |o|
 end.parse!
 
 if ARGV.first
-	options[:host], options[:port] = ARGV.split(':')
+	options[:socket] = ARGV.first
 end
 
-socket = TCPSocket.new(options[:host], options[:port].to_i)
+socket = UNIXSocket.new(File.expand_path(options[:socket]))
 
 if options[:now_playing]
 	socket.puts [:now_playing, options[:song]].to_json

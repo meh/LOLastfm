@@ -8,6 +8,13 @@
 #  0. You just DO WHAT THE FUCK YOU WANT TO.
 #++
 
-LOLastfm.define_checker :cmus do
+require 'cmus'
 
+LOLastfm.define_checker :cmus do
+	settings.default[:socket] = '~/.cmus/socket'
+
+	@cmus = Cmus::Controller.new(settings[:socket])
+
+	hint do |title|
+	end
 end

@@ -42,7 +42,7 @@ class LOLastfm
 	end
 
 	def start
-		@server = EM.start_server(@host || '0.0.0.0', @port || 40506, LOLastfm::Connection) {|conn|
+		@server = EM.start_unix_domain_server(@socket || File.expand_path('~/.LOLastfm.socket'), LOLastfm::Connection) {|conn|
 			conn.fm = self
 		}
 
@@ -54,6 +54,8 @@ class LOLastfm
 	def stop
 		EM.stop_server @server
 		EM.cancel_timer @timer
+
+		@checker.stop if @checker
 	ensure
 		save
 	end
@@ -74,9 +76,8 @@ class LOLastfm
 		end
 	end
 
-	def listen (host = '0.0.0.0', port)
-		@host = host
-		@port = port
+	def socket (path)
+		@socket = path
 	end
 
 	def session (key)
@@ -144,14 +145,13 @@ class LOLastfm
 		@last_played
 	end
 
-	def checker (*args, &block)
+	def use (*args, &block)
 		if args.first.is_a? Symbol
-			block = @@checkers[args.shift]
+			name  = args.shift
+			block = @@checkers[name]
 		end
 
-		raise LocalJumpError, 'no block given' unless block
-
-		@checker = Checker.new(fm, name, args.shift, &block)
+		@checker = Checker.new(self, name, args.shift, &block)
 		@checker.start
 	end
 

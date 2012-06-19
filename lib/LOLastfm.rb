@@ -149,9 +149,13 @@ class LOLastfm
 	end
 
 	def use (*args, &block)
-		if args.first.is_a? Symbol
-			name  = args.shift
+		unless args.first.respond_to? :to_hash
+			name  = args.shift.to_sym
 			block = @@checkers[name]
+		end
+
+		if @checker
+			@checker.stop
 		end
 
 		@checker = Checker.new(self, name, args.shift, &block)
@@ -165,21 +169,21 @@ class LOLastfm
 	end
 
 	def on (event, &block)
-		@events[event] << block
+		@events[event.to_sym] << block
 	end
 
 	def fire (event, *args)
 		delete = []
 
-		@events[event.to_sym].each {|event|
-			result = event.call(*args)
+		@events[event.to_sym].each {|block|
+			result = block.call(*args)
 
 			if result == :delete
 				delete << event
 			end
 		}
 
-		@events[event] -= delete
+		@events[event.to_sym] -= delete
 	end
 end
 

@@ -24,7 +24,11 @@ class Checker
 		end
 
 		def method_missing (id, *args, &block)
-			@default.merge(@data).__send__ id, *args, &block
+			if @default.respond_to? id
+				return @default.merge(@data).__send__ id, *args, &block
+			end
+
+			super
 		end
 	end
 
@@ -41,14 +45,32 @@ class Checker
 		@timers = []
 	end
 
+	def respond_to_missing? (id)
+		@fm.respond_to?(id)
+	end
+
+	def method_missing (id, *args, &block)
+		if @fm.respond_to? id
+			return @fm.__send__ id, *args, &block
+		end
+
+		super
+	end
+
 	def start
 		instance_eval &@block
 	end
 	
-	def stop
+	def stop (&block)
 		@timers.each {|timer|
 			clear_timeout(timer)
 		}
+
+		if block
+			@stop = block
+		else
+			@stop.call if @stop
+		end
 	end
 
 	def hint (*args, &block)

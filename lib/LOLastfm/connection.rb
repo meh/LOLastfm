@@ -13,31 +13,32 @@ require 'json'
 class LOLastfm
 
 class Connection < EventMachine::Protocols::LineAndTextProtocol
-	attr_accessor :fm
+	attr_writer :fm
 
 	def receive_line (line)
 		command, arguments = JSON.parse(line)
 
-		puts [command, arguments].inspect
-
 		case command.upcase.to_sym
+		when :USE
+			use arguments
+
 		when :LISTENED
-			fm.listened(arguments)
+			listened(arguments)
 
 		when :NOW_PLAYING
-			fm.now_playing(arguments)
+			now_playing(arguments)
 
 		when :LOVE
-			fm.love(arguments)
+			love(arguments)
 
 		when :HINT
-			fm.hint(*arguments)
+			hint(*arguments)
 
 		when :NOW_PLAYING?
-			send_data fm.now_playing?.to_json
+			send_data now_playing?.to_json
 
 		when :NEXT?
-			fm.on :now_playing do |song|
+			on :now_playing do |song|
 				send_data song.to_json
 
 				:delete
@@ -46,6 +47,18 @@ class Connection < EventMachine::Protocols::LineAndTextProtocol
 	rescue => e
 		$stderr.puts e.to_s
 		$stderr.puts e.backtrace
+	end
+
+	def respond_to_missing? (id)
+		@fm.respond_to?(id)
+	end
+
+	def method_missing (id, *args, &block)
+		if @fm.respond_to? id
+			return @fm.__send__ id, *args, &block
+		end
+
+		super
 	end
 end
 

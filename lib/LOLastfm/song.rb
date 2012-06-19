@@ -16,7 +16,7 @@ require 'date'
 class LOLastfm
 
 class Song
-	attr_reader :track, :title, :album, :artist, :length, :listened_at, :path, :id
+	attr_accessor :track, :title, :album, :artist, :length, :listened_at, :path, :id
 
 	def initialize (data)
 		data = Hash[data.map { |key, value| [key.to_sym, value] }]
@@ -76,6 +76,8 @@ class Song
 		elsif @length
 			@listened_at = DateTime.now - @length
 		end
+
+		stream! if data[:stream]
 	end
 
 	def stream?; @stream;        end

@@ -67,17 +67,17 @@ class Checker
 		}
 
 		if block
-			@stop = block
+			@stop_block = block
 		else
-			@stop.call if @stop
+			@stop_block.call if @stop_block
 		end
 	end
 
 	def hint (*args, &block)
 		if block
-			@hint = block
+			@hint_block = block
 		else
-			@hint.call(*args) if @hint
+			@hint_block.call(*args) if @hint_block
 		end
 	end
 

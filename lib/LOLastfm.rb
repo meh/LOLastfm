@@ -92,7 +92,7 @@ class LOLastfm
 	def now_playing (song)
 		song = Song.new(song) unless song.is_a?(Song)
 
-		fire :now_playing, song
+		return unless fire(:now_playing, song)
 
 		@now_playing = song
 
@@ -102,7 +102,7 @@ class LOLastfm
 	def listened (song)
 		song = Song.new(song) unless song.is_a?(Song)
 
-		fire :listened, song
+		return unless fire :listened, song
 
 		@cache.flush!
 		@now_playing = nil
@@ -125,7 +125,7 @@ class LOLastfm
 		song = @last_played or return unless song
 		song = Song.new(song) unless song.is_a? Song
 
-		fire :love, song
+		return unless fire :love, song
 
 		unless love! song
 			@cache.love(song)
@@ -173,17 +173,25 @@ class LOLastfm
 	end
 
 	def fire (event, *args)
-		delete = []
+		delete  = []
+		stopped = false
 
 		@events[event.to_sym].each {|block|
 			result = block.call(*args)
 
-			if result == :delete
+			case result
+			when :delete
 				delete << event
+
+			when :stop
+				stopped = true
+				break
 			end
 		}
 
 		@events[event.to_sym] -= delete
+
+		return !stopped
 	end
 end
 

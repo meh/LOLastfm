@@ -16,7 +16,7 @@ require 'date'
 class LOLastfm
 
 class Song
-	attr_accessor :track, :title, :album, :artist, :length, :listened_at, :path, :id
+	attr_accessor :track, :title, :album, :artist, :comment, :length, :listened_at, :path, :id
 
 	def initialize (data)
 		data = Hash[data.map { |key, value| [key.to_sym, value] }]
@@ -26,44 +26,46 @@ class Song
 		@album       = data[:album]
 		@artist      = data[:artist]
 		@length      = data[:length] && data[:length].to_i
+		@comment     = data[:comment]
 		@listened_at = data[:listened_at]
 		@path        = data[:path]
 		@id          = data[:id]
 
 		if @path
 			TagLib::FileRef.open(@path) {|f|
-				@track  = f.tag.track unless @track
-				@title  = f.tag.title unless @title
-				@album  = f.tag.album unless @album
-				@artist = f.tag.artist unless @artist
-				@length = f.properties.length.to_i unless @length
-
-				unless @id
-					TagLib::MPEG::File.new(@path).tap {|file|
-						next unless tag = file.id3v2_tag
-
-						if ufid = tag.frame_list('UFID').find { |u| u.owner == 'http://musicbrainz.org' }
-							@id = ufid.identifier
-						end
-					}
-				end
-
-				unless @id
-					TagLib::FLAC::File.new(@path).tap {|file|
-						next unless tag = file.xiph_comment
-
-						@id = tag.field_list_map['MUSICBRAINZ_TRACKID']
-					}
-				end
-
-				unless @id
-					TagLib::Ogg::Vorbis::File.new(@path).tap {|file|
-						next unless tag = file.tag
-
-						@id = tag.field_list_map['MUSICBRAINZ_TRACKID']
-					}
-				end
+				@track   = f.tag.track.to_i unless @track
+				@title   = f.tag.title unless @title
+				@album   = f.tag.album unless @album
+				@artist  = f.tag.artist unless @artist
+				@comment = f.tag.comment unless @comment
+				@length  = f.properties.length.to_i unless @length
 			}
+
+			unless @id
+				TagLib::MPEG::File.new(@path).tap {|file|
+					next unless tag = file.id3v2_tag
+
+					if ufid = tag.frame_list('UFID').find { |u| u.owner == 'http://musicbrainz.org' }
+						@id = ufid.identifier
+					end
+				}
+			end
+
+			unless @id
+				TagLib::FLAC::File.new(@path).tap {|file|
+					next unless tag = file.xiph_comment
+
+					@id = tag.field_list_map['MUSICBRAINZ_TRACKID']
+				}
+			end
+
+			unless @id
+				TagLib::Ogg::Vorbis::File.new(@path).tap {|file|
+					next unless tag = file.tag
+
+					@id = tag.field_list_map['MUSICBRAINZ_TRACKID']
+				}
+			end
 		end
 
 		if @length && @length < 0
@@ -80,13 +82,14 @@ class Song
 		stream! if data[:stream]
 	end
 
-	def stream?; @stream;        end
+	def stream?; !!@stream;      end
 	def stream!; @stream = true; end
 
 	def to_hash
 		{
-			track: track, title: title, album: album, artist: artist,
-			length: length, listened_at: listened_at, path: path, id: id
+			track: track, title: title, album: album, artist: artist, comment: comment,
+			length: length, listened_at: listened_at, path: path, id: id,
+			stream: stream?
 		}
 	end
 

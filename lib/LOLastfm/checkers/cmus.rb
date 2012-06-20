@@ -39,13 +39,17 @@ LOLastfm.define_checker :cmus do
 		@last = status
 	end
 
-	hint do |title|
-		if @last_hint && title != @last_hint
-			listened title: title, stream: true
+	hint do |type, *args|
+		if type == 'stream'
+			title, comment = args
+
+			if @hint && title != @hint
+				listened title: @hint, comment: comment || @cmus.status.song.comment, stream: true
+			end
+
+			now_playing title: title, comment: comment || @cmus.status.song.comment, stream: true
+
+			@hint = title
 		end
-
-		now_playing title: title, stream: true
-
-		@last_hint = title
 	end
 end

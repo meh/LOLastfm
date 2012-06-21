@@ -16,6 +16,16 @@ require 'date'
 class LOLastfm
 
 class Song
+	def self.is_scrobblable? (position, duration)
+		return false if duration < 30
+
+		return true if position > 240
+
+		return true if position >= duration / 2
+
+		false
+	end
+
 	attr_accessor :track, :title, :album, :artist, :comment, :length, :listened_at, :path, :id
 
 	def initialize (data)
@@ -68,8 +78,9 @@ class Song
 			end
 		end
 
-		if @length && @length < 0
+		if data[:stream] || (@length && @length < 0)
 			stream!
+
 			@length = nil
 		end
 
@@ -78,12 +89,16 @@ class Song
 		elsif @length
 			@listened_at = DateTime.now - @length
 		end
-
-		stream! if data[:stream]
 	end
 
 	def stream?; !!@stream;      end
 	def stream!; @stream = true; end
+
+	def == (other)
+		return true if super
+
+		title == other.title && artist == other.artist
+	end
 
 	def to_hash
 		{

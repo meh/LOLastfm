@@ -92,17 +92,19 @@ class LOLastfm
 	def now_playing (song)
 		song = Song.new(song) unless song.is_a?(Song)
 
-		return unless fire(:now_playing, song)
+		return false unless fire(:now_playing, song)
 
 		@now_playing = song
 
 		@session.track.update_now_playing(song.artist, song.title)
+
+		true
 	end
 
 	def listened (song)
 		song = Song.new(song) unless song.is_a?(Song)
 
-		return unless fire :listened, song
+		return false unless fire :listened, song
 
 		@cache.flush!
 		@now_playing = nil
@@ -110,6 +112,8 @@ class LOLastfm
 		unless listened! song
 			@cache.listened(song)
 		end
+		
+		true
 	end
 
 	def listened! (song)
@@ -125,11 +129,13 @@ class LOLastfm
 		song = @last_played or return unless song
 		song = Song.new(song) unless song.is_a? Song
 
-		return unless fire :love, song
+		return false unless fire :love, song
 
 		unless love! song
 			@cache.love(song)
 		end
+
+		true
 	end
 
 	def love! (song)
@@ -194,6 +200,3 @@ class LOLastfm
 		return !stopped
 	end
 end
-
-require 'LOLastfm/checkers/moc'
-require 'LOLastfm/checkers/cmus'

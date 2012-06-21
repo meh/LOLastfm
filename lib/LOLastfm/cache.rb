@@ -23,13 +23,13 @@ class Cache
 	end
 
 	def listened (song)
-		return if @loved.contains? song
+		return if @loved.member? song
 
 		@listened << song
 	end
 
 	def love (song)
-		return if @loved.contains? song
+		return if @loved.member? song
 
 		@loved << song
 	end

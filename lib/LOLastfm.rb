@@ -86,19 +86,19 @@ class LOLastfm
 	end
 
 	def is_authenticated?
-		@session.session
+		!!@session.session
 	end
 
 	def now_playing (song)
 		song = Song.new(song) unless song.is_a?(Song)
 
-		return false unless fire(:now_playing, song)
+		return false unless fire :now_playing, song
 
 		@now_playing = song
 
 		@session.track.update_now_playing(song.artist, song.title)
-
-		true
+	rescue
+		false
 	end
 
 	def listened (song)
@@ -117,10 +117,9 @@ class LOLastfm
 	end
 
 	def listened! (song)
-		@session.track.scrobble(song.artist, song.title, song.listened_at, song.album, song.track, song.id, song.length)
-		@last_played = song
-
-		true
+		@session.track.scrobble(song.artist, song.title, song.listened_at.to_time.to_i, song.album, song.track, song.id, song.length).tap {
+			@last_played = song
+		}
 	rescue
 		false
 	end
@@ -140,8 +139,6 @@ class LOLastfm
 
 	def love! (song)
 		@session.track.love(song.artist, song.title)
-
-		true
 	rescue
 		false
 	end

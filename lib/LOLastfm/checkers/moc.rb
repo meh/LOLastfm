@@ -8,6 +8,61 @@
 #  0. You just DO WHAT THE FUCK YOU WANT TO.
 #++
 
-LOLastfm.define_checker :moc do
+require 'moc'
 
+class Moc::Controller::Status
+	def to_song
+		return unless song
+
+		if song.file.start_with?('http://') || song.file.start_with?('ftp://')
+			comment = song.file
+		else
+			path = song.file
+		end
+
+		LOLastfm::Song.new(
+			track:   song.track,
+			title:   song.title,
+			artist:  song.artist,
+			album:   song.album,
+			length:  song.duration,
+			comment: comment,
+			path:    path,
+			stream:  !!comment
+		)
+	end
+end
+
+LOLastfm.define_checker :moc do
+	settings.default[:socket] = '~/.moc/socket2'
+	settings.default[:every]  = 5
+
+	@moc  = Moc::Controller.new(settings[:socket])
+	@last = @moc.status
+
+	if @last == :play
+		now_playing @last.to_song
+	end
+
+	set_interval settings[:every] do
+		status = @moc.status
+
+		if status == :stop
+			if @last != :stop && LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration)
+				listened @last.to_song
+			end
+		elsif status == :pause
+			# nothing
+		else
+			if @last != :stop && (@last.to_song != status.to_song || @last.song.position > status.song.position) && LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration)
+				listened @last.to_song
+			end
+
+			if @last != :play || @last.to_song != status.to_song
+				now_playing status.to_song
+			end
+		end
+
+		@last = status
+	end
 end

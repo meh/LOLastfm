@@ -12,10 +12,18 @@ require 'cmus'
 
 class Cmus::Controller::Status
 	def to_song
-		data = song.marshal_dump
-		data[:track] = data[:tracknumber]
+		return unless song
 
-		LOLastfm::Song.new(data)
+		LOLastfm::Song.new(
+			track:   song.track,
+			title:   song.title,
+			artist:  song.artist,
+			album:   song.album,
+			length:  song.duration,
+			comment: song.tags.comment,
+			path:    song.file,
+			stream:  !song.file
+		)
 	end
 end
 
@@ -27,21 +35,27 @@ LOLastfm.define_checker :cmus do
 	@cmus = Cmus::Controller.new(settings[:socket], settings[:timeout])
 	@last = @cmus.status
 
+	if @last == :play
+		now_playing @last.to_song
+	end
+
 	set_interval settings[:every] do
 		status = @cmus.status
 
-		if status == :stopped
-			if @last == :playing && LOLastfm::Song.is_scrobblable?(@last.position, @last.duration)
+		if status == :stop
+			if @last != :stop && LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration)
 				listened @last.to_song
 			end
-		elsif status == :paused
+		elsif status == :pause
 			# nothing
 		else
-			if (@last.to_song != status.to_song || @last.position > status.position) && LOLastfm::Song.is_scrobblable?(@last.position, @last.duration)
+			if @last != :stop && (@last.to_song != status.to_song || @last.song.position > status.song.position) && LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration)
 				listened @last.to_song
 			end
 
-			now_playing status.to_song
+			if @last != :play || @last.to_song != status.to_song
+				now_playing status.to_song
+			end
 		end
 
 		@last = status

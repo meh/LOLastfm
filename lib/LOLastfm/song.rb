@@ -43,12 +43,17 @@ class Song
 
 		if @path
 			TagLib::FileRef.open(@path) {|f|
-				@track   = f.tag.track.to_i unless @track
-				@title   = f.tag.title unless @title
-				@album   = f.tag.album unless @album
-				@artist  = f.tag.artist unless @artist
-				@comment = f.tag.comment unless @comment
-				@length  = f.properties.length.to_i unless @length
+				if f.tag
+					@track   = f.tag.track && f.tag.track.to_i unless @track
+					@title   = f.tag.title unless @title
+					@album   = f.tag.album unless @album
+					@artist  = f.tag.artist unless @artist
+					@comment = f.tag.comment unless @comment
+				end
+
+				if f.audio_properties
+					@length = f.audio_properties.length.to_i unless @length
+				end
 			}
 
 			unless @id
@@ -87,7 +92,9 @@ class Song
 		if @listened_at
 			@listened_at = @listened_at.is_a?(String) ? DateTime.parse(@listened_at) : @listened_at.to_datetime
 		elsif @length
-			@listened_at = DateTime.now - @length
+			@listened_at = (Time.now - @length).to_datetime
+		else
+			@listened_at = DateTime.now
 		end
 	end
 

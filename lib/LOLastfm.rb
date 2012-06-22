@@ -143,6 +143,10 @@ class LOLastfm
 		false
 	end
 
+	def stopped_playing!
+		@now_playing = nil
+	end
+
 	def now_playing?
 		@now_playing
 	end

@@ -50,9 +50,11 @@ LOLastfm.define_checker :moc do
 		if status == :stop
 			if @last != :stop && LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration)
 				listened @last.to_song
+			else
+				stopped_playing!
 			end
 		elsif status == :pause
-			# nothing
+			stopped_playing!
 		else
 			if @last != :stop && (@last.to_song != status.to_song || @last.song.position > status.song.position) && LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration)
 				listened @last.to_song

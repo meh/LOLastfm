@@ -11,21 +11,25 @@
 require 'eventmachine'
 require 'lastfm'
 
-require 'LOLastfm/version'
-require 'LOLastfm/cache'
-require 'LOLastfm/connection'
-require 'LOLastfm/song'
-require 'LOLastfm/checker'
-
 class LOLastfm
-	@@checkers = {}
-
 	def self.load (path)
 		new.tap { |o| o.load(path) }
 	end
 
+	def self.checkers
+		@checkers ||= {}
+	end
+
 	def self.define_checker (name, &block)
-		@@checkers[name] = block
+		checkers[name.to_sym.downcase] = block
+	end
+
+	def self.commands
+		@commands ||= {}
+	end
+
+	def self.define_command (name, &block)
+		commands[name.to_sym.downcase] = block
 	end
 
 	attr_reader :cache
@@ -158,7 +162,7 @@ class LOLastfm
 	def use (*args, &block)
 		unless args.first.respond_to? :to_hash
 			name  = args.shift.to_sym
-			block = @@checkers[name]
+			block = self.class.checkers[name]
 		end
 
 		if @checker
@@ -201,3 +205,9 @@ class LOLastfm
 		return !stopped
 	end
 end
+
+require 'LOLastfm/version'
+require 'LOLastfm/cache'
+require 'LOLastfm/connection'
+require 'LOLastfm/song'
+require 'LOLastfm/checker'

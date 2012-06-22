@@ -96,7 +96,7 @@ class LOLastfm
 
 		@now_playing = song
 
-		@session.track.update_now_playing(song.artist, song.title)
+		@session.track.update_now_playing(song.artist, song.title, song.album, song.track, song.id, song.length)
 	rescue
 		false
 	end

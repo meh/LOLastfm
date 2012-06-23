@@ -169,17 +169,14 @@ class LOLastfm
 	end
 
 	def use (*args, &block)
-		if args.first.is_a?(String)
-			return require args.first
+		if args.last.is_a?(String)
+			require args.pop
 		end
 
-		unless block
-			name = args.shift.to_sym
+		return if args.empty?
 
-			if args.first.is_a?(String)
-				require args.shift
-			end
-
+		unless args.first.respond_to?(:to_hash) || block
+			name  = args.shift.to_sym
 			block = self.class.checkers[name]
 		end
 

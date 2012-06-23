@@ -10,9 +10,17 @@
 
 require 'glyr'
 
-class Glyr::Result::Data
-	def to_json
-		{ source: source, provider: provider, data: data }.to_json
+module Glyr
+	class Source
+		def to_hash
+			{ name: name, quality: quality, speed: speed, language_aware: language_aware? }
+		end
+	end
+
+	class Result
+		def to_hash
+			{ source: source, url: url, data: data }
+		end
 	end
 end
 
@@ -21,7 +29,7 @@ LOLastfm.define_command :lyrics? do
 
 	EM.defer -> {
 		Glyr.query.title(song.title).artist(song.artist).album(song.album).lyrics
-	}, -> result {
-		send_line result.first.to_str.to_json
+	}, -> results {
+		send_line results.map(&:to_hash).to_json
 	}
 end

@@ -40,7 +40,7 @@ how to scrobble songs from trance.fm.
         next :stop if song.title.include? 'trance.fm'
 
         song.artist, song.title = song.title.split(/\s*-\s*/, 2)
-        song.length             = 360
+        song.length             = 60 * 1337
 
         next
       end

@@ -11,7 +11,6 @@
 require 'moc'
 
 class Moc::Controller::Status
-	memoize
 	def to_song
 		return unless song
 
@@ -49,15 +48,15 @@ LOLastfm.define_checker :moc do
 		status = @moc.status
 
 		if status == :stop
-			if @last != :stop && LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration)
+			if @last != :stop && (@last.to_song.stream? || LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration))
 				listened @last.to_song
-			else
-				stopped_playing!
 			end
+
+			stopped_playing!
 		elsif status == :pause
 			stopped_playing!
 		else
-			if @last != :stop && (@last.to_song != status.to_song || @last.song.position > status.song.position) && LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration)
+			if @last != :stop && (@last.to_song != status.to_song || @last.song.position > status.song.position + 30) && (@last.to_song.stream? || LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration))
 				listened @last.to_song
 			end
 

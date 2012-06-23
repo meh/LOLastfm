@@ -10,7 +10,6 @@
 
 require 'eventmachine'
 require 'lastfm'
-require 'call-me/memoize'
 
 class LOLastfm
 	def self.load (path)
@@ -47,7 +46,11 @@ class LOLastfm
 		instance_eval File.read(File.expand_path(path)), path
 	end
 
+	def started?; !!@started; end
+
 	def start
+		return if started?
+
 		@server = EM.start_unix_domain_server(@socket || File.expand_path('~/.LOLastfm/socket'), LOLastfm::Connection) {|conn|
 			conn.fm = self
 		}
@@ -55,9 +58,13 @@ class LOLastfm
 		@timer = EM.add_periodic_timer 360 do
 			save
 		end
+
+		@checker.start
 	end
 
 	def stop
+		return unless started?
+
 		EM.stop_server @server
 		EM.cancel_timer @timer
 
@@ -169,15 +176,15 @@ class LOLastfm
 	end
 
 	def commands (name)
-		if name.is_a? Symbol
+		begin
 			require "LOLastfm/commands/#{name}"
-		else
+		rescue LoadError
 			require name.to_s
 		end
 	end
 
 	def use (*args, &block)
-		return if args.empty?
+		return if args.empty? && !block
 
 		unless args.first.respond_to?(:to_hash) || block
 			name = args.shift.to_sym
@@ -197,9 +204,9 @@ class LOLastfm
 			@checker.stop
 		end
 
-		@checker = Checker.new(self, name, args.shift, &block)
-		@checker.start
-		@checker
+		@checker = Checker.new(self, name, args.shift, &block).tap {|c|
+			c.start if started?
+		}
 	end
 
 	def hint (*args)

@@ -32,20 +32,20 @@ This allows for some neat features, like easily scrobbling from a radio, the fol
 how to scrobble songs from trance.fm.
 
 ```ruby
-  %w(listened love now_playing).each {|name|
-    on name do |song|
-      next if song.artist || !song.stream?
+%w(listened love now_playing).each {|name|
+  on name do |song|
+    next if song.artist || !song.stream?
 
-      if song.comment && song.comment.include?('trance.fm')
-        next :stop if song.title.include? 'trance.fm'
+    if song.comment && song.comment.include?('trance.fm')
+      next :stop if song.title.include? 'trance.fm'
 
-        song.artist, song.title = song.title.split(/\s*-\s*/, 2)
-        song.length             = 60 * 1337
+      song.artist, song.title = song.title.split(/\s*-\s*/, 2)
+      song.length             = 60 * 1337
 
-        next
-      end
-
-      :stop
+      next
     end
-  }
+
+    :stop
+  end
+}
 ```

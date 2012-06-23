@@ -168,15 +168,28 @@ class LOLastfm
 		@last_played
 	end
 
-	def use (*args, &block)
-		if args.last.is_a?(String)
-			require args.pop
+	def commands (name)
+		if name.is_a? Symbol
+			require "LOLastfm/commands/#{name}"
+		else
+			require name.to_s
 		end
+	end
 
+	def use (*args, &block)
 		return if args.empty?
 
 		unless args.first.respond_to?(:to_hash) || block
-			name  = args.shift.to_sym
+			name = args.shift.to_sym
+
+			if args.last.is_a? String
+				require args.pop
+			else
+				begin
+					require "LOLastfm/checkers/#{name}"
+				rescue LoadError; end
+			end
+
 			block = self.class.checkers[name]
 		end
 

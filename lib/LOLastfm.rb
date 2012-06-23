@@ -10,6 +10,7 @@
 
 require 'eventmachine'
 require 'lastfm'
+require 'call-me/memoize'
 
 class LOLastfm
 	def self.load (path)
@@ -98,6 +99,10 @@ class LOLastfm
 
 		return false unless fire :now_playing, song
 
+		@now_playing = nil
+
+		return false if song.nil?
+
 		@now_playing = song
 
 		@session.track.update_now_playing(song.artist, song.title, song.album, song.track, song.id, song.length)
@@ -112,6 +117,8 @@ class LOLastfm
 
 		@cache.flush!
 		@now_playing = nil
+
+		return false if song.nil?
 
 		unless listened! song
 			@cache.listened(song)
@@ -133,6 +140,8 @@ class LOLastfm
 		song = Song.new(song) unless song.is_a? Song
 
 		return false unless fire :love, song
+
+		return false if song.nil?
 
 		unless love! song
 			@cache.love(song)
@@ -160,8 +169,17 @@ class LOLastfm
 	end
 
 	def use (*args, &block)
-		unless args.first.respond_to? :to_hash
-			name  = args.shift.to_sym
+		if args.first.is_a?(String)
+			return require args.first
+		end
+
+		unless block
+			name = args.shift.to_sym
+
+			if args.first.is_a?(String)
+				require args.shift
+			end
+
 			block = self.class.checkers[name]
 		end
 
@@ -171,6 +189,7 @@ class LOLastfm
 
 		@checker = Checker.new(self, name, args.shift, &block)
 		@checker.start
+		@checker
 	end
 
 	def hint (*args)

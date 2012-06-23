@@ -16,4 +16,5 @@ Gem::Specification.new {|s|
 
 	s.add_dependency 'lastfm'
 	s.add_dependency 'taglib-ruby'
+	s.add_dependency 'call-me'
 }

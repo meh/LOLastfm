@@ -28,7 +28,7 @@ class Song
 
 	attr_accessor :track, :title, :album, :artist, :comment, :length, :listened_at, :path, :id
 
-	def initialize (data)
+	def initialize (no_fill = false, data)
 		data = Hash[data.map { |key, value| [key.to_sym, value] }]
 
 		@track       = data[:track] && data[:track].to_i
@@ -41,47 +41,7 @@ class Song
 		@path        = data[:path]
 		@id          = data[:id]
 
-		if @path
-			TagLib::FileRef.open(@path) {|f|
-				if f.tag
-					@track   = f.tag.track && f.tag.track.to_i unless @track
-					@title   = f.tag.title unless @title
-					@album   = f.tag.album unless @album
-					@artist  = f.tag.artist unless @artist
-					@comment = f.tag.comment unless @comment
-				end
-
-				if f.audio_properties
-					@length = f.audio_properties.length.to_i unless @length
-				end
-			}
-
-			unless @id
-				TagLib::MPEG::File.new(@path).tap {|file|
-					next unless tag = file.id3v2_tag
-
-					if ufid = tag.frame_list('UFID').find { |u| u.owner == 'http://musicbrainz.org' }
-						@id = ufid.identifier
-					end
-				}
-			end
-
-			unless @id
-				TagLib::FLAC::File.new(@path).tap {|file|
-					next unless tag = file.xiph_comment
-
-					@id = tag.field_list_map['MUSICBRAINZ_TRACKID']
-				}
-			end
-
-			unless @id
-				TagLib::Ogg::Vorbis::File.new(@path).tap {|file|
-					next unless tag = file.tag
-
-					@id = tag.field_list_map['MUSICBRAINZ_TRACKID']
-				}
-			end
-		end
+		fill! unless no_fill
 
 		if data[:stream] || (@length && @length < 0)
 			stream!
@@ -98,14 +58,70 @@ class Song
 		end
 	end
 
+	def fill!
+		return unless @path
+
+		return if @track && @title && @album && @artist && @comment && @length && @id
+
+		TagLib::FileRef.open(@path) {|f|
+			if f.tag
+				@track   = f.tag.track && f.tag.track.to_i unless @track
+				@title   = f.tag.title unless @title
+				@album   = f.tag.album unless @album
+				@artist  = f.tag.artist unless @artist
+				@comment = f.tag.comment unless @comment
+			end
+
+			if f.audio_properties
+				@length = f.audio_properties.length.to_i unless @length
+			end
+		}
+
+		unless @id
+			TagLib::MPEG::File.new(@path).tap {|file|
+				next unless tag = file.id3v2_tag
+
+				if ufid = tag.frame_list('UFID').find { |u| u.owner == 'http://musicbrainz.org' }
+					@id = ufid.identifier
+				end
+			}
+		end
+
+		unless @id
+			TagLib::FLAC::File.new(@path).tap {|file|
+				next unless tag = file.xiph_comment
+
+				@id = tag.field_list_map['MUSICBRAINZ_TRACKID']
+			}
+		end
+
+		unless @id
+			TagLib::Ogg::Vorbis::File.new(@path).tap {|file|
+				next unless tag = file.tag
+
+				@id = tag.field_list_map['MUSICBRAINZ_TRACKID']
+			}
+		end
+	end
+
 	def stream?; !!@stream;      end
 	def stream!; @stream = true; end
+
+	def nil?
+		title.nil? || artist.nil?
+	end
+
+	def hash
+		[title, artist].hash
+	end
 
 	def == (other)
 		return true if super
 
 		title == other.title && artist == other.artist
 	end
+
+	alias eql? ==
 
 	def to_hash
 		{

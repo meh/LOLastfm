@@ -11,6 +11,7 @@
 require 'moc'
 
 class Moc::Controller::Status
+	memoize
 	def to_song
 		return unless song
 
@@ -20,7 +21,7 @@ class Moc::Controller::Status
 			path = song.file
 		end
 
-		LOLastfm::Song.new(
+		LOLastfm::Song.new(true,
 			track:   song.track,
 			title:   song.title,
 			artist:  song.artist,

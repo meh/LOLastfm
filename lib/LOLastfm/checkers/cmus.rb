@@ -11,10 +11,11 @@
 require 'cmus'
 
 class Cmus::Controller::Status
+	memoize
 	def to_song
 		return unless song
 
-		LOLastfm::Song.new(
+		LOLastfm::Song.new(true,
 			track:   song.track,
 			title:   song.title,
 			artist:  song.artist,

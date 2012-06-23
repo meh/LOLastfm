@@ -6,7 +6,7 @@ require 'json'
 options = {}
 
 OptionParser.new do |o|
-	options[:socket] = '~/.LOLastfm.socket'
+	options[:socket] = '~/.LOLastfm/socket'
 	options[:song] = {}
 
 	o.on '--listened', 'enable listened sending' do

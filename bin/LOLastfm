@@ -24,7 +24,7 @@ OptionParser.new do |o|
 end.parse!
 
 EM.run {
-	d = LOLastfm.load(ARGV.first || '~/.LOLastfm.rc')
+	d = LOLastfm.load(ARGV.first || '~/.LOLastfm/config')
 	d.start
 
 	%w[INT KILL].each {|sig|

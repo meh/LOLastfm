@@ -4,7 +4,7 @@ require 'json'
 
 args = Hash[*ARGV]
 
-UNIXSocket.new(File.expand_path('~/.LOLastfm.socket')).tap {|socket|
+UNIXSocket.new(File.expand_path('~/.LOLastfm/socket')).tap {|socket|
 	if args['url']
 		socket.puts [:hint, [:stream, args['title'], args['comment']]].to_json
 	end

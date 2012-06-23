@@ -40,7 +40,7 @@ class LOLastfm
 		@cache   = Cache.new(self)
     @events  = Hash.new { |h, k| h[k] = [] }
 
-		cache_at '~/.LOLastfm.cache'
+		cache_at '~/.LOLastfm/cache'
 	end
 
 	def load (path)
@@ -48,7 +48,7 @@ class LOLastfm
 	end
 
 	def start
-		@server = EM.start_unix_domain_server(@socket || File.expand_path('~/.LOLastfm.socket'), LOLastfm::Connection) {|conn|
+		@server = EM.start_unix_domain_server(@socket || File.expand_path('~/.LOLastfm/socket'), LOLastfm::Connection) {|conn|
 			conn.fm = self
 		}
 

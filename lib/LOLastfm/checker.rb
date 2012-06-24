@@ -62,13 +62,13 @@ class Checker
 	end
 	
 	def stop (&block)
-		@timers.each {|timer|
-			clear_timeout(timer)
-		}
-
 		if block
 			@stop_block = block
 		else
+			@timers.each {|timer|
+				clear_timeout(timer)
+			}
+
 			@stop_block.call if @stop_block
 		end
 	end

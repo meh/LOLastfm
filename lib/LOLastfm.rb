@@ -95,7 +95,7 @@ class LOLastfm
 		end
 	end
 
-	def listen (host, port = nil)
+	def server_at (host, port = nil)
 		if port
 			@host = host
 			@port = port

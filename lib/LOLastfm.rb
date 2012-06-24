@@ -189,9 +189,9 @@ class LOLastfm
 		unless args.first.respond_to?(:to_hash) || block
 			name = args.shift.to_sym
 
-			if args.last.is_a? String
+			if args.first.is_a? String
 				require args.pop
-			else
+			elsif !self.class.checkers[name]
 				begin
 					require "LOLastfm/checkers/#{name}"
 				rescue LoadError; end

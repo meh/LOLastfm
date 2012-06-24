@@ -37,31 +37,42 @@ LOLastfm.define_checker :moc do
 	settings.default[:socket] = '~/.moc/socket2'
 	settings.default[:every]  = 5
 
-	@moc  = Moc::Controller.new(settings[:socket])
-	@last = @moc.status
+	if @moc = Moc::Controller.new(settings[:socket]) rescue false
+		@last = @moc.status
 
-	if @last == :play
-		now_playing @last.to_song
+		if @last == :play
+			now_playing @last.to_song
+		end
 	end
 
 	set_interval settings[:every] do
-		status = @moc.status
+		unless @moc
+			@moc = Moc::Controller.new(settings[:socket]) rescue next
+			@last = @moc.status
+		end
 
-		if status == :stop
-			if @last != :stop && (@last.to_song.stream? || LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration))
-				listened @last.to_song
-			end
+		unless status = @moc.status rescue nil
+			@moc = nil
+			next
+		end
 
-			stopped_playing!
-		elsif status == :pause
-			stopped_playing!
-		else
-			if @last != :stop && (@last.to_song != status.to_song || @last.song.position > status.song.position + 30) && (@last.to_song.stream? || LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration))
-				listened @last.to_song
-			end
+		if @last && status
+			if status == :stop
+				if @last != :stop && (@last.to_song.stream? || LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration))
+					listened @last.to_song
+				end
 
-			if @last != :play || @last.to_song != status.to_song
-				now_playing status.to_song
+				stopped_playing!
+			elsif status == :pause
+				stopped_playing!
+			else
+				if @last != :stop && (@last.to_song != status.to_song || @last.song.position > status.song.position + 30) && (@last.to_song.stream? || LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration))
+					listened @last.to_song
+				end
+
+				if @last != :play || @last.to_song != status.to_song
+					now_playing status.to_song
+				end
 			end
 		end
 

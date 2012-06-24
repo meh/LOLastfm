@@ -32,14 +32,25 @@ LOLastfm.define_checker :cmus do
 	settings.default[:every]   = 5
 	settings.default[:timeout] = 0.005
 
-	@cmus = Cmus::Controller.new(settings[:socket], settings[:timeout])
-	@last = @cmus.status
+	if @cmus = Cmus::Controller.new(settings[:socket], settings[:timeout]) rescue false
+		@last = @cmus.status
 
-	if @last == :play
-		now_playing @last.to_song
+		if @last == :play
+			now_playing @last.to_song
+		end
 	end
 
 	set_interval settings[:every] do
+		unless @cmus
+			@cmus = Cmus::Controller.new(settings[:socket], settings[:timeout]) rescue next
+			@last = @cmus.status
+		end
+
+		unless status = @cmus.status rescue nil
+			@cmus = nil
+			next
+		end
+
 		status = @cmus.status
 
 		if status == :stop

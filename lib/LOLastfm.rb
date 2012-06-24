@@ -32,7 +32,7 @@ class LOLastfm
 		commands[name.to_sym.downcase] = block
 	end
 
-	attr_reader :cache
+	attr_reader :path, :host, :port, :cache
 
 	def initialize
 		@session = Lastfm.new('5f7b134ba19b20536a5e29bc86ae64c9', '3b50e74d989795c3f4b3667c5a1c8e67')
@@ -51,9 +51,15 @@ class LOLastfm
 	def start
 		return if started?
 
-		@server = EM.start_unix_domain_server(@socket || File.expand_path('~/.LOLastfm/socket'), LOLastfm::Connection) {|conn|
-			conn.fm = self
-		}
+		@server = if @host && @port
+			EM.start_server(host, port, LOLastfm::Connection) {|conn|
+				conn.fm = self
+			}
+		else
+			EM.start_unix_domain_server(path || File.expand_path('~/.LOLastfm/socket'), LOLastfm::Connection) {|conn|
+				conn.fm = self
+			}
+		end
 
 		@timer = EM.add_periodic_timer 360 do
 			save
@@ -89,8 +95,13 @@ class LOLastfm
 		end
 	end
 
-	def socket (path)
-		@socket = path
+	def listen (host, port = nil)
+		if port
+			@host = host
+			@port = port
+		else
+			@path = host
+		end
 	end
 
 	def session (key)

@@ -65,6 +65,8 @@ class Checker
 		if block
 			@stop_block = block
 		else
+			@stopped = true
+
 			@timers.each {|timer|
 				clear_timeout(timer)
 			}
@@ -72,6 +74,8 @@ class Checker
 			@stop_block.call if @stop_block
 		end
 	end
+
+	def stopped?; !!@stopped; end
 
 	def hint (*args, &block)
 		if block

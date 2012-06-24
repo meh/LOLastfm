@@ -114,6 +114,7 @@ class LOLastfm
 
 	def now_playing (song)
 		song = Song.new(song) unless song.is_a?(Song)
+		song = song.dup
 
 		return false unless fire :now_playing, song
 
@@ -130,6 +131,7 @@ class LOLastfm
 
 	def listened (song)
 		song = Song.new(song) unless song.is_a?(Song)
+		song = song.dup
 
 		return false unless fire :listened, song
 
@@ -156,6 +158,7 @@ class LOLastfm
 	def love (song = nil)
 		song = @last_played or return unless song
 		song = Song.new(song) unless song.is_a? Song
+		song = song.dup
 
 		return false unless fire :love, song
 

@@ -17,6 +17,8 @@ class LOLastfm
 
 class Song
 	def self.is_scrobblable? (position, duration)
+		return false unless position && duration
+
 		return false if duration < 30
 
 		return true if position > 240

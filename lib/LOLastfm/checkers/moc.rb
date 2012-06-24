@@ -10,22 +10,25 @@
 
 require 'moc'
 
-class Moc::Controller::Status
+class Moc::Controller::Status::Live
 	def to_song
 		return unless song
 
-		if song.file.start_with?('http://') || song.file.start_with?('ftp://')
-			comment = song.file
+		file = song.file
+		tags = song.tags
+
+		if file.start_with?('http://') || file.start_with?('ftp://')
+			comment = file
 		else
-			path = song.file
+			path = file
 		end
 
 		LOLastfm::Song.new(true,
-			track:   song.track,
-			title:   song.title,
-			artist:  song.artist,
-			album:   song.album,
-			length:  song.duration,
+			track:   tags.track,
+			title:   tags.title,
+			artist:  tags.artist,
+			album:   tags.album,
+			length:  tags.time,
 			comment: comment,
 			path:    path,
 			stream:  !!comment
@@ -37,45 +40,58 @@ LOLastfm.define_checker :moc do
 	settings.default[:socket] = '~/.moc/socket2'
 	settings.default[:every]  = 5
 
-	if @moc = Moc::Controller.new(settings[:socket]) rescue false
-		@last = @moc.status
-
-		if @last == :play
-			now_playing @last.to_song
-		end
-	end
-
-	set_interval settings[:every] do
-		unless @moc
-			@moc = Moc::Controller.new(settings[:socket]) rescue next
-			@last = @moc.status
+	create = proc {
+		unless moc = Moc::Controller.new(settings[:socket]) rescue false
+			set_timeout settings[:every], &create unless stopped?
 		end
 
-		unless status = @moc.status rescue nil
-			@moc = nil
-			next
-		end
+		Thread.new {
+			song, position = nil
 
-		if @last && status
-			if status == :stop
-				if @last != :stop && (@last.to_song.stream? || LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration))
-					listened @last.to_song
-				end
+			begin
+				moc.loop {|e|
+					if e == :audio_stop
+						next unless song
 
-				stopped_playing!
-			elsif status == :pause
-				stopped_playing!
-			else
-				if @last != :stop && (@last.to_song != status.to_song || @last.song.position > status.song.position + 30) && (@last.to_song.stream? || LOLastfm::Song.is_scrobblable?(@last.song.position, @last.song.duration))
-					listened @last.to_song
-				end
+						if song.stream?
+							listened song
+						else
+							if LOLastfm::Song.is_scrobblable?(position, song.length)
+								listened song
+							else
+								stopped_playing!
+							end
+						end
 
-				if @last != :play || @last.to_song != status.to_song
-					now_playing status.to_song
-				end
+						song = nil
+					elsif e == :tags
+					elsif e == :audio_start
+						now_playing song = moc.status(true).to_song
+					elsif e == :state && moc.status(true) == :paused
+						stopped_playing!
+					elsif e == :ctime
+						unless song
+							now_playing song = moc.status(true).to_song
+						end
+
+						if song.stream?
+							if moc.status(true).song.title != song.title
+								listened song
+								now_playing song = moc.status(true).to_song
+							end
+						else
+							position = moc.status(true).song.position
+						end
+					end
+				}
+			rescue Exception => e
+				$stderr.puts e.message
+				$stderr.puts e.backtrace
 			end
-		end
 
-		@last = status
-	end
+			set_timeout settings[:every], &create unless stopped?
+		}
+	}
+
+	create.call
 end

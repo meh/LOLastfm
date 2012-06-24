@@ -37,7 +37,7 @@ how to scrobble songs from trance.fm.
     next if song.artist || !song.stream?
 
     if song.comment && song.comment.include?('trance.fm')
-      next :stop if song.title.include? 'trance.fm'
+      next :stop if song.title.include?('trance.fm') || song.title.start_with?('Trance - FM-')
 
       song.artist, song.title = song.title.split(/\s*-\s*/, 2)
       song.length             = 60 * 1337

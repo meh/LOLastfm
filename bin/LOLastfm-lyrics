@@ -1,0 +1,20 @@
+#! /usr/bin/env ruby
+require 'json'
+require 'socket'
+
+socket = UNIXSocket.new(File.expand_path(ARGV.empty? ? '~/.LOLastfm/socket' : ARGV.first))
+socket.puts [:commands, :glyr].to_json
+
+if STDOUT.tty?
+	require 'ncursesw'
+else
+	socket.puts [:lyrics?].to_json
+
+	response = JSON.parse(socket.readline)
+
+	if response.first
+		puts response.first['data']
+	else
+		exit 1
+	end
+end

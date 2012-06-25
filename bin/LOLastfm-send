@@ -52,6 +52,10 @@ OptionParser.new do |o|
 	o.on '-u', '--use USE', 'the string for the checker' do |value|
 		options[:use] = value
 	end
+
+	o.on '-u', '--commands COMMANDS', 'the string for the command library' do |value|
+		options[:commands] = value
+	end
 end.parse!
 
 if ARGV.first
@@ -62,6 +66,8 @@ socket = UNIXSocket.new(File.expand_path(options[:socket]))
 
 if options[:use]
 	socket.puts [:use, options[:use].split(':')].to_json
+elsif options[:commands]
+	socket.puts [:commands, options[:commands].split(':')].to_json
 else
 	if options[:now_playing]
 		socket.puts [:now_playing, options[:song]].to_json

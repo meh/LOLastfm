@@ -1,0 +1,14 @@
+#! /usr/bin/env ruby
+require 'json'
+require 'socket'
+
+socket = UNIXSocket.new(File.expand_path(ARGV.empty? ? '~/.LOLastfm/socket' : ARGV.first))
+socket.puts [:now_playing?].to_json
+
+response = JSON.parse(?[ + socket.readline + ?]).first
+
+exit 1 if response.nil?
+
+%w[track title artist album].each {|name|
+	puts "#{name} #{response[name]}" if response[name]
+}

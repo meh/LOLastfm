@@ -16,6 +16,10 @@ define_command :use do |*args|
 	use *args
 end
 
+define_command :commands do |*args|
+	commands *args
+end
+
 define_command :listened do |song|
 	listened song
 end

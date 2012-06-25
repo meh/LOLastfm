@@ -7,6 +7,8 @@ socket.puts [:commands, :glyr].to_json
 
 if STDOUT.tty?
 	require 'ncursesw'
+
+	abort 'ncurses UI not implemented yet, redirect the output to something'
 else
 	socket.puts [:lyrics?].to_json
 

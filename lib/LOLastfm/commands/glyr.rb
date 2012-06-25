@@ -9,6 +9,8 @@
 #++
 
 require 'glyr'
+require 'tmpdir'
+require 'fileutils'
 
 module Glyr
 	class Source
@@ -22,6 +24,11 @@ module Glyr
 			{ source: source, url: url, data: data }
 		end
 	end
+
+	File.join(Dir.tmpdir, rand.to_s).tap {|path|
+		FileUtils.mkpath(path)
+		cache_at path
+	}
 end
 
 LOLastfm.define_command :lyrics? do

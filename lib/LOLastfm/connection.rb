@@ -59,7 +59,7 @@ class Connection < EventMachine::Protocols::LineAndTextProtocol
 		command, arguments = JSON.parse(line)
 
 		if block = LOLastfm.commands[command.to_sym.downcase]
-			instance_eval *arguments, &block
+			instance_exec *arguments, &block
 		end
 	rescue => e
 		$stderr.puts e.to_s

@@ -27,6 +27,11 @@ EM.run {
 	d = LOLastfm.load(ARGV.first || '~/.LOLastfm/config')
 	d.start
 
+	EM.error_handler {|e|
+		$stderr.puts e.message
+		$stderr.puts e.backtrace
+	}
+
 	%w[INT KILL].each {|sig|
 		trap sig do
 			puts 'LOLastfm stopping...'

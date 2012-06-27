@@ -21,7 +21,11 @@ module Glyr
 
 	class Result
 		def to_hash
-			{ source: source, url: url, data: data }
+			if respond_to? :to_str
+				{ source: source, url: url, content: to_str }
+			else
+				{ source: source, url: url }
+			end
 		end
 	end
 

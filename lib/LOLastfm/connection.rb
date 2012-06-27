@@ -61,7 +61,7 @@ class Connection < EventMachine::Protocols::LineAndTextProtocol
 		if block = LOLastfm.commands[command.to_sym.downcase]
 			instance_exec *arguments, &block
 		end
-	rescue => e
+	rescue Exception => e
 		$stderr.puts e.to_s
 		$stderr.puts e.backtrace
 	end
@@ -69,7 +69,7 @@ class Connection < EventMachine::Protocols::LineAndTextProtocol
 	def send_line (line)
 		raise ArgumentError, 'the line already has a newline character' if line.include? "\n"
 
-		send_data "#{line}\r\n"
+		send_data line.dup.force_encoding('BINARY') << "\r\n"
 	end
 
 	def respond_to_missing? (id)

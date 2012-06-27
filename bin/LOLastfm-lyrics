@@ -15,7 +15,7 @@ else
 	response = JSON.parse(socket.readline)
 
 	if response.first
-		puts response.first['data']
+		puts response.first['content']
 	else
 		exit 1
 	end

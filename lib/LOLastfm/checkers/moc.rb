@@ -64,7 +64,6 @@ LOLastfm.define_checker :moc do
 						end
 
 						song = nil
-					elsif e == :tags
 					elsif e == :audio_start
 						now_playing song = moc.status(true).to_song
 					elsif e == :state && moc.status(true) == :paused

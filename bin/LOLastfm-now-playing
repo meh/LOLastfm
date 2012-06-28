@@ -1,14 +1,35 @@
 #! /usr/bin/env ruby
-require 'json'
-require 'socket'
+require 'optparse'
+require 'LOLastfm/client'
 
-socket = UNIXSocket.new(File.expand_path(ARGV.empty? ? '~/.LOLastfm/socket' : ARGV.first))
-socket.puts [:now_playing?].to_json
+options = {}
 
-response = JSON.parse(?[ + socket.readline + ?]).first
+OptionParser.new do |o|
+	options[:socket] = '~/.LOLastfm/socket'
 
-exit 1 if response.nil?
+	o.on '-t', '--template TEMPLATE', 'the template to use' do |value|
+		options[:template] = value
+	end
+end.parse!
 
-%w[track title artist album].each {|name|
-	puts "#{name} #{response[name]}" if response[name]
-}
+if ARGV.first
+	options[:socket] = ARGV.first
+end
+
+client = LOLastfm::Client.new(options[:socket])
+client.send_command :now_playing?
+
+exit 1 if (response = client.read_response).nil?
+
+if options[:template]
+	track  = response['track']
+	title  = response['title']
+	artist = response['artist']
+	album  = response['album']
+
+	puts eval("%Q{#{options[:template]}}")
+else
+	%w[track title artist album].each {|name|
+		puts "#{name} #{response[name]}" if response[name]
+	}
+end

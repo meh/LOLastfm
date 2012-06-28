@@ -1,18 +1,16 @@
 #! /usr/bin/env ruby
-require 'json'
-require 'socket'
+require 'LOLastfm/client'
 
-socket = UNIXSocket.new(File.expand_path(ARGV.empty? ? '~/.LOLastfm/socket' : ARGV.first))
-socket.puts [:commands, :glyr].to_json
+client = LOLastfm::Client.new(ARGV.empty? ? '~/.LOLastfm/socket' : ARGV.first)
+client.send_command :commands, :glyr
 
 if STDOUT.tty?
 	require 'ncursesw'
 
 	abort 'ncurses UI not implemented yet, redirect the output to something'
 else
-	socket.puts [:lyrics?].to_json
-
-	response = JSON.parse(socket.readline)
+	client.send_command :lyrics?
+	response = client.read_response
 
 	if response.first
 		puts response.first['content']

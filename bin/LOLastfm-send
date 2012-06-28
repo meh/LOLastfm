@@ -1,7 +1,6 @@
 #! /usr/bin/env ruby
 require 'optparse'
-require 'socket'
-require 'json'
+require 'LOLastfm/client'
 
 options = {}
 
@@ -70,23 +69,20 @@ if ARGV.first
 	options[:socket] = ARGV.first
 end
 
-socket = UNIXSocket.new(File.expand_path(options[:socket]))
+client = LOLastfm::Client.new(options[:socket])
 
 if options[:use]
-	socket.puts [:use, options[:use].split(':')].to_json
+	client.send_command :use, options[:use].split(':')
 elsif options[:commands]
-	socket.puts [:commands, options[:commands].split(':')].to_json
+	client.send_command :commands, options[:commands].split(':')
 else
 	if options[:now_playing]
-		socket.puts [:now_playing, options[:song]].to_json
+		client.send_command :now_playing, options[:song]
 	elsif options[:love]
-		socket.puts [:love, options[:song].empty? ? (options[:current] ? :current : nil) : options[:song]].to_json
+		client.send_command :love, options[:song].empty? ? (options[:current] ? :current : nil) : options[:song]
 	elsif options[:unlove]
-		socket.puts [:unlove, options[:song].empty? ? (options[:current] ? :current : nil) : options[:song]].to_json
+		client.send_command :unlove, options[:song].empty? ? (options[:current] ? :current : nil) : options[:song]
 	else
-		socket.puts [:listened, options[:song]].to_json
+		client.send_command :listened, options[:song]
 	end
 end
-
-socket.flush
-socket.close

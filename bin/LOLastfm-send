@@ -79,9 +79,9 @@ else
 	if options[:now_playing]
 		client.send_command :now_playing, options[:song]
 	elsif options[:love]
-		client.send_command :love, options[:song].empty? ? (options[:current] ? :current : nil) : options[:song]
+		client.send_command :love, (options[:song].empty? ? (options[:current] ? :current : nil) : options[:song])
 	elsif options[:unlove]
-		client.send_command :unlove, options[:song].empty? ? (options[:current] ? :current : nil) : options[:song]
+		client.send_command :unlove, (options[:song].empty? ? (options[:current] ? :current : nil) : options[:song])
 	else
 		client.send_command :listened, options[:song]
 	end

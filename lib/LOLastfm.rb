@@ -157,6 +157,7 @@ class LOLastfm
 
 	def love (song = nil)
 		song = @last_played or return unless song
+		song = now_playing? or return if song == 'current' || song == :current
 		song = Song.new(song) unless song.is_a? Song
 		song = song.dup
 
@@ -173,6 +174,29 @@ class LOLastfm
 
 	def love! (song)
 		@session.track.love(song.artist, song.title)
+	rescue
+		false
+	end
+
+	def unlove (song = nil)
+		song = @last_played or return unless song
+		song = now_playing? or return if song == 'current' || song == :current
+		song = Song.new(song) unless song.is_a? Song
+		song = song.dup
+
+		return false unless fire :unlove, song
+
+		return false if song.nil?
+
+		unless unlove! song
+			@cache.unlove(song)
+		end
+
+		true
+	end
+
+	def unlove! (song)
+		@session.track.unlove(song.artist, song.title)
 	rescue
 		false
 	end

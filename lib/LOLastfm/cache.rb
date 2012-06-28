@@ -20,6 +20,7 @@ class Cache
 
 		@listened = []
 		@loved    = []
+		@unloved  = []
 	end
 
 	def listened (song)
@@ -34,8 +35,14 @@ class Cache
 		@loved << song
 	end
 
+	def unlove (song)
+		return if @unloved.member? song
+
+		@unloved << song
+	end
+
 	def empty?
-		@listened.empty? && @loved.empty?
+		@listened.empty? && @loved.empty? && @unloved.empty?
 	end
 
 	def flush!
@@ -50,6 +57,12 @@ class Cache
 
 			@loved.shift
 		end
+
+		until @unloved.empty?
+			break unless fm.unlove! @unloved.first
+
+			@unloved.shift
+		end
 	end
 
 	def load (path)
@@ -57,15 +70,23 @@ class Cache
 
 		data['listened'].each {|song|
 			listened(Song.new(song))
-		}
+		} if data['listened']
 
 		data['loved'].each {|song|
 			love(Song.new(song))
-		}
+		} if data['loved']
+
+		data['unloved'].each {|song|
+			unlove(Song.new(song))
+		} if data['unloved']
 	end
 
 	def to_yaml
-		{ 'listened' => @listened.map(&:to_hash), 'loved' => @loved.map(&:to_hash) }.to_yaml
+		{
+			'listened' => @listened.map(&:to_hash),
+			'loved'    => @loved.map(&:to_hash),
+			'unloved'  => @unloved.map(&:to_hash)
+		}.to_yaml
 	end
 end
 

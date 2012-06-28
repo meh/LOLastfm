@@ -36,6 +36,10 @@ define_command :love do |song|
 	love song
 end
 
+define_command :unlove do |song|
+	unlove song
+end
+
 define_command :hint do |*args|
 	hint *args
 end

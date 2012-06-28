@@ -32,7 +32,7 @@ This allows for some neat features, like easily scrobbling from a radio, the fol
 how to scrobble songs from trance.fm.
 
 ```ruby
-%w(listened love now_playing).each {|name|
+%w(listened love unlove now_playing).each {|name|
   on name do |song|
     next if song.artist || !song.stream?
 

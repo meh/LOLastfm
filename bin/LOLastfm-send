@@ -21,6 +21,14 @@ OptionParser.new do |o|
 		options[:love] = true
 	end
 
+	o.on '--unlove', 'enable unlove sending' do
+		options[:unlove] = true
+	end
+
+	o.on '-c', '--current', 'work on the current song' do
+		options[:current] = true
+	end
+
 	o.on '-t', '--title TITLE', 'title of the song' do |value|
 		options[:song][:title] = value
 	end
@@ -72,7 +80,9 @@ else
 	if options[:now_playing]
 		socket.puts [:now_playing, options[:song]].to_json
 	elsif options[:love]
-		socket.puts [:love, options[:song].empty? ? nil : options[:song]].to_json
+		socket.puts [:love, options[:song].empty? ? (options[:current] ? :current : nil) : options[:song]].to_json
+	elsif options[:unlove]
+		socket.puts [:unlove, options[:song].empty? ? (options[:current] ? :current : nil) : options[:song]].to_json
 	else
 		socket.puts [:listened, options[:song]].to_json
 	end

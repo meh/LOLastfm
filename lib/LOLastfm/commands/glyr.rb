@@ -41,6 +41,6 @@ LOLastfm.define_command :lyrics? do
 	EM.defer -> {
 		Glyr.query(title: song.title, artist: song.artist, album: song.album).lyrics
 	}, -> results {
-		send_line results.map(&:to_hash).to_json
+		send_response results.map(&:to_hash)
 	}
 end

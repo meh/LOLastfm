@@ -12,6 +12,10 @@ require 'json'
 
 class LOLastfm
 
+define_command :version? do
+	send_response LOLastfm.version
+end
+
 define_command :use do |*args|
 	use *args
 end
@@ -45,7 +49,7 @@ define_command :hint do |*args|
 end
 
 define_command :now_playing? do
-	send_line now_playing?.to_json
+	send_response now_playing?
 end
 
 define_command :next? do
@@ -70,12 +74,6 @@ class Connection < EventMachine::Protocols::LineAndTextProtocol
 		$stderr.puts e.backtrace
 	end
 
-	def send_line (line)
-		raise ArgumentError, 'the line already has a newline character' if line.include? "\n"
-
-		send_data line.dup.force_encoding('BINARY') << "\r\n"
-	end
-
 	def respond_to_missing? (id)
 		@fm.respond_to?(id)
 	end
@@ -86,6 +84,16 @@ class Connection < EventMachine::Protocols::LineAndTextProtocol
 		end
 
 		super
+	end
+
+	def send_line (line)
+		raise ArgumentError, 'the line already has a newline character' if line.include? "\n"
+
+		send_data line.dup.force_encoding('BINARY') << "\r\n"
+	end
+
+	def send_response (*arguments)
+		send_line (arguments.length == 1 ? arguments.first : arguments).to_json
 	end
 end
 

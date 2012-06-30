@@ -43,6 +43,8 @@ LOLastfm.define_checker :moc do
 	create = proc {
 		unless moc = Moc::Controller.new(settings[:socket]) rescue false
 			set_timeout settings[:every], &create unless stopped?
+
+			next
 		end
 
 		Thread.new {
@@ -86,6 +88,16 @@ LOLastfm.define_checker :moc do
 			rescue Exception => e
 				$stderr.puts e.message
 				$stderr.puts e.backtrace
+			end
+
+			if song.stream?
+				listened song
+			else
+				if LOLastfm::Song.is_scrobblable?(position, song.length)
+					listened song
+				else
+					stopped_playing!
+				end
 			end
 
 			set_timeout settings[:every], &create unless stopped?

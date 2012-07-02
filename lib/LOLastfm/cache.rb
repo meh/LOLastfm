@@ -83,9 +83,9 @@ class Cache
 
 	def to_yaml
 		{
-			'listened' => @listened.map(&:to_hash),
-			'loved'    => @loved.map(&:to_hash),
-			'unloved'  => @unloved.map(&:to_hash)
+			listened: @listened.map(&:to_hash),
+			loved:    @loved.map(&:to_hash),
+			unloved:  @unloved.map(&:to_hash)
 		}.to_yaml
 	end
 end

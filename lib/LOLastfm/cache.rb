@@ -68,15 +68,15 @@ class Cache
 	def load (path)
 		data = YAML.parse_file(path).transform
 
-		data['listened'].each {|song|
+		data[:listened].each {|song|
 			listened(Song.new(song))
 		} if data['listened']
 
-		data['loved'].each {|song|
+		data[:loved].each {|song|
 			love(Song.new(song))
 		} if data['loved']
 
-		data['unloved'].each {|song|
+		data[:unloved].each {|song|
 			unlove(Song.new(song))
 		} if data['unloved']
 	end

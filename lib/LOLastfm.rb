@@ -68,6 +68,7 @@ class LOLastfm
 		end
 
 		@checker.start
+		@cache.flush!
 	end
 
 	def stop
@@ -170,14 +171,14 @@ class LOLastfm
 		unless listened! song
 			@cache.listened(song)
 		end
+
+		@last_played = song
 		
 		true
 	end
 
 	def listened! (song)
-		@session.track.scrobble(song.artist, song.title, song.listened_at.to_time.to_i, song.album, song.track, song.id, song.length).tap {
-			@last_played = song
-		}
+		@session.track.scrobble(song.artist, song.title, song.listened_at.to_time.to_i, song.album, song.track, song.id, song.length)
 	rescue Exception => e
 		log e, :listened
 

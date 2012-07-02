@@ -47,19 +47,19 @@ class Cache
 
 	def flush!
 		until @listened.empty?
-			break unless fm.listened! @listened.first
+			break unless fm.listened! Song.new(@listened.first)
 
 			@listened.shift
 		end
 
 		until @loved.empty?
-			break unless fm.love! @loved.first
+			break unless fm.love! Song.new(@loved.first)
 
 			@loved.shift
 		end
 
 		until @unloved.empty?
-			break unless fm.unlove! @unloved.first
+			break unless fm.unlove! Song.new(@unloved.first)
 
 			@unloved.shift
 		end

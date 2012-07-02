@@ -86,8 +86,7 @@ LOLastfm.define_checker :moc do
 					end
 				}
 			rescue Exception => e
-				$stderr.puts e.message
-				$stderr.puts e.backtrace
+				log e, 'checker: moc'
 			end
 
 			if song.stream?

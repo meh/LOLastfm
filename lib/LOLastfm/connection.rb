@@ -70,8 +70,7 @@ class Connection < EventMachine::Protocols::LineAndTextProtocol
 			instance_exec *arguments, &block
 		end
 	rescue Exception => e
-		$stderr.puts e.to_s
-		$stderr.puts e.backtrace
+		f.log e, "command: #{command}"
 	end
 
 	def respond_to_missing? (id)

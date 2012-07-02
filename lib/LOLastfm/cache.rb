@@ -24,19 +24,19 @@ class Cache
 	end
 
 	def listened (song)
-		return if @loved.member? song
+		return if song.nil? || @listened.member?(song)
 
 		@listened << song
 	end
 
 	def love (song)
-		return if @loved.member? song
+		return if song.nil? || @loved.member?(song)
 
 		@loved << song
 	end
 
 	def unlove (song)
-		return if @unloved.member? song
+		return if song.nil? || @unloved.member?(song)
 
 		@unloved << song
 	end

@@ -50,6 +50,10 @@ class Song
 
 			@length = nil
 		end
+	end
+
+	def fill!
+		return unless @path
 
 		if @listened_at
 			@listened_at = @listened_at.is_a?(String) ? DateTime.parse(@listened_at) : @listened_at.to_datetime
@@ -58,10 +62,6 @@ class Song
 		else
 			@listened_at = DateTime.now
 		end
-	end
-
-	def fill!
-		return unless @path
 
 		return if @track && @title && @album && @artist && @comment && @length && @id
 

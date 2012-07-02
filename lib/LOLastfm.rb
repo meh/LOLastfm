@@ -10,6 +10,7 @@
 
 require 'eventmachine'
 require 'lastfm'
+require 'stringio'
 
 class LOLastfm
 	def self.load (path)
@@ -40,6 +41,7 @@ class LOLastfm
     @events  = Hash.new { |h, k| h[k] = [] }
 
 		cache_at '~/.LOLastfm/cache'
+		logs_at  '~/.LOLastfm/logs'
 	end
 
 	def load (path)
@@ -87,12 +89,8 @@ class LOLastfm
 		end
 	end
 
-	def save
-		if @cache_at
-			File.open(@cache_at, 'w') {|f|
-				f.write(@cache.to_yaml)
-			}
-		end
+	def logs_at (path)
+		@logs_at = File.expand_path(path)
 	end
 
 	def server_at (host, port = nil)
@@ -102,6 +100,35 @@ class LOLastfm
 		else
 			@path = host
 		end
+	end
+
+	def save
+		if @cache_at
+			File.open(@cache_at, 'w') {|f|
+				f.write(@cache.to_yaml)
+			}
+		end
+	end
+
+	def log (what, group = nil)
+		io = StringIO.new
+
+		io.print "[#{Time.now}#{" (#{group})" if group}] "
+
+		if what.is_a? Exception
+			io.puts "#{what.type}: #{what.message}"
+			io.puts e.backtrace
+		else
+			io.puts what
+		end
+
+		io.seek 0
+
+		io.read.tap {|text|
+			$stderr.puts text
+
+			File.open(@logs_at, 'a') { |f| f.print text }
+		}
 	end
 
 	def session (key)
@@ -151,7 +178,9 @@ class LOLastfm
 		@session.track.scrobble(song.artist, song.title, song.listened_at.to_time.to_i, song.album, song.track, song.id, song.length).tap {
 			@last_played = song
 		}
-	rescue
+	rescue Exception => e
+		log e, :listened
+
 		false
 	end
 
@@ -174,7 +203,9 @@ class LOLastfm
 
 	def love! (song)
 		@session.track.love(song.artist, song.title)
-	rescue
+	rescue Exception => e
+		log e, :love
+
 		false
 	end
 
@@ -197,7 +228,9 @@ class LOLastfm
 
 	def unlove! (song)
 		@session.track.unlove(song.artist, song.title)
-	rescue
+	rescue Exception => e
+		log e, :unlove
+
 		false
 	end
 

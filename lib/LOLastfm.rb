@@ -117,7 +117,7 @@ class LOLastfm
 		io.print "[#{Time.now}#{" (#{group})" if group}] "
 
 		if what.is_a? Exception
-			io.puts "#{what.type}: #{what.message}"
+			io.puts "#{what.class.name}: #{what.message}"
 			io.puts e.backtrace
 		else
 			io.puts what

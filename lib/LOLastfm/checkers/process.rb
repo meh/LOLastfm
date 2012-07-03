@@ -11,24 +11,25 @@
 LOLastfm.define_checker :process do
 	settings.default[:every] = 5
 
-	set_interval settings[:every] do
-		if status == :stopped
-			if @last == :playing
-
-			end
-		else
+	ENV['PATH'].split(':').each {|path|
+		if File.executable?("#{path}/lsof")
+			break settings.default[:lsof] = "#{path}/lsof"
 		end
+	}
 
-		@last = status
+	unless settings[:name]
+		raise 'I need the name of the process to check'
+	end
+
+	unless settings[:lsof]
+		raise 'I need the path to lsof to work'
+	end
+
+	set_interval settings[:every] do
+
 	end
 
 	hint do |path|
-		if @hint && path != @hint
-			next unless listened path: path
-		end
-
-		next unless now_playing path: path
-
-		@hint = path
+		listened path: path
 	end
 end

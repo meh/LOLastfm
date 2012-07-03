@@ -54,6 +54,10 @@ class Song
 		if @listened_at
 			@listened_at = @listened_at.is_a?(String) ? DateTime.parse(@listened_at) : @listened_at.to_datetime
 		end
+	end
+
+	def listened_at
+		return @listened_at if @listened_at
 
 		unless nil? || @listened_at
 			if @length
@@ -62,6 +66,8 @@ class Song
 				@listened_at = DateTime.now
 			end
 		end
+
+		@listened_at
 	end
 
 	def fill!
@@ -143,6 +149,22 @@ class Song
 
 	def to_yaml
 		to_hash.to_yaml
+	end
+
+	def inspect
+		header = ''
+		header << "#{id} "                      if id
+		header << "listened at #{listened_at} " if listened_at
+		header << "#{length} seconds "          if length
+		header << "found at #{path} "           if path
+
+		parts = ''
+		parts << "track=#{track} "   if track
+		parts << "title=#{title} "   if title
+		parts << "artist=#{artist} " if artist
+		parts << "album=#{album} "   if album
+
+		"#<LOLastfm::Song#{"(#{header[0 .. -2]})" unless header.empty?}:#{" #{parts[0 .. -2]}" if parts}>"
 	end
 end
 

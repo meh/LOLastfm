@@ -70,15 +70,15 @@ class Cache
 
 		data[:listened].each {|song|
 			listened(Song.new(song))
-		} if data['listened']
+		} if data[:listened]
 
 		data[:loved].each {|song|
 			love(Song.new(song))
-		} if data['loved']
+		} if data[:loved]
 
 		data[:unloved].each {|song|
 			unlove(Song.new(song))
-		} if data['unloved']
+		} if data[:unloved]
 	end
 
 	def to_yaml

@@ -71,9 +71,7 @@ class Song
 	end
 
 	def fill!
-		return unless @path
-
-		return if @track && @title && @album && @artist && @comment && @length && @id
+		return if !@path || (@track && @title && @album && @artist && @comment && @length && @id)
 
 		TagLib::FileRef.open(@path) {|f|
 			if f.tag

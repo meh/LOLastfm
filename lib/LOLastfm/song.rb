@@ -60,7 +60,7 @@ class Song
 		return @listened_at if @listened_at
 
 		unless nil? || @listened_at
-			if @length
+			if @length && !stream?
 				@listened_at = (Time.now - @length).to_datetime
 			else
 				@listened_at = DateTime.now

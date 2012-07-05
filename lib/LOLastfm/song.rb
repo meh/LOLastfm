@@ -53,21 +53,13 @@ class Song
 
 		if @listened_at
 			@listened_at = @listened_at.is_a?(String) ? DateTime.parse(@listened_at) : @listened_at.to_datetime
-		end
-	end
-
-	def listened_at
-		return @listened_at if @listened_at
-
-		unless nil? || @listened_at
-			if @length && !stream?
+		else
+			if @length
 				@listened_at = (Time.now - @length).to_datetime
 			else
 				@listened_at = DateTime.now
 			end
 		end
-
-		@listened_at
 	end
 
 	def fill!

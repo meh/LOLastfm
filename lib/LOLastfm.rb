@@ -164,15 +164,15 @@ class LOLastfm
 		return false unless fire :listened, song
 
 		@cache.flush!
-		@now_playing = nil
 
 		return false if song.nil?
+
+		@now_playing = nil
+		@last_played = song
 
 		unless listened! song
 			@cache.listened(song)
 		end
-
-		@last_played = song
 		
 		true
 	end

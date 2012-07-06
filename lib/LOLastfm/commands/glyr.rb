@@ -35,12 +35,16 @@ module Glyr
 	}
 end
 
-LOLastfm.define_command :lyrics? do
-	song = now_playing?
+LOLastfm.define_command :lyrics? do |song|
+	song = song ? Song.new(song) : now_playing?
 
-	EM.defer -> {
-		Glyr.query(title: song.title, artist: song.artist, album: song.album).lyrics
-	}, -> results {
-		send_response results.map(&:to_hash)
-	}
+	if song
+		EM.defer -> {
+			Glyr.query(title: song.title, artist: song.artist, album: song.album).lyrics
+		}, -> results {
+			send_response results.map(&:to_hash)
+		}
+	else
+		send_response nil
+	end
 end

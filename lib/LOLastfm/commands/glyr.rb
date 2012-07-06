@@ -29,7 +29,7 @@ module Glyr
 		end
 	end
 
-	File.join(Dir.tmpdir, rand.to_s).tap {|path|
+	File.expand_path(ENV['GLYR_CACHE'] || '~/.LOLastfm/glyr.cache').tap {|path|
 		FileUtils.mkpath(path)
 		cache_at path
 	}

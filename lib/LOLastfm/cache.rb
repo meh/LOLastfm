@@ -24,19 +24,19 @@ class Cache
 	end
 
 	def listened (song)
-		return if song.nil? || @listened.member?(song)
+		return if song.nil?
 
 		@listened << song
 	end
 
 	def love (song)
-		return if song.nil? || @loved.member?(song)
+		return if song.nil?
 
 		@loved << song
 	end
 
 	def unlove (song)
-		return if song.nil? || @unloved.member?(song)
+		return if song.nil?
 
 		@unloved << song
 	end
@@ -47,19 +47,19 @@ class Cache
 
 	def flush!
 		until @listened.empty?
-			break unless fm.listened! Song.new(@listened.first)
+			break unless fm.listened! @listened.first
 
 			@listened.shift
 		end
 
 		until @loved.empty?
-			break unless fm.love! Song.new(@loved.first)
+			break unless fm.love! @loved.first
 
 			@loved.shift
 		end
 
 		until @unloved.empty?
-			break unless fm.unlove! Song.new(@unloved.first)
+			break unless fm.unlove! @unloved.first
 
 			@unloved.shift
 		end

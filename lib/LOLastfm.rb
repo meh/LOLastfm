@@ -118,7 +118,7 @@ class LOLastfm
 
 		if what.is_a? Exception
 			io.puts "#{what.class.name}: #{what.message}"
-			io.puts e.backtrace
+			io.puts what.backtrace
 		else
 			io.puts what
 		end
@@ -179,6 +179,8 @@ class LOLastfm
 
 	def listened! (song)
 		@session.track.scrobble(song.artist, song.title, song.listened_at.to_time.to_i, song.album, song.track, song.id, song.length)
+	rescue SystemCallError
+		false
 	rescue Exception => e
 		log e, :listened
 
@@ -204,6 +206,8 @@ class LOLastfm
 
 	def love! (song)
 		@session.track.love(song.artist, song.title)
+	rescue SystemCallError
+		false
 	rescue Exception => e
 		log e, :love
 
@@ -229,6 +233,8 @@ class LOLastfm
 
 	def unlove! (song)
 		@session.track.unlove(song.artist, song.title)
+	rescue SystemCallError
+		false
 	rescue Exception => e
 		log e, :unlove
 

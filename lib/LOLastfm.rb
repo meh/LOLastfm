@@ -114,7 +114,7 @@ class LOLastfm
 	def log (what, group = nil)
 		io = StringIO.new
 
-		io.print "[#{Time.now}#{" (#{group})" if group}] "
+		io.print "[#{Time.now}#{", #{group}" if group}] "
 
 		if what.is_a? Exception
 			io.puts "#{what.class.name}: #{what.message}"

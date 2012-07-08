@@ -81,7 +81,7 @@ LOLastfm.define_checker :moc do
 								now_playing song = moc.status(true).to_song
 							end
 						else
-							position = moc.status(true).song.position
+							position = moc.status(true).song.position rescue nil
 						end
 					end
 				}

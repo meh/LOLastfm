@@ -87,15 +87,19 @@ LOLastfm.define_checker :moc do
 				}
 			rescue Exception => e
 				log e, 'checker: moc'
+
+				retry if moc.active?
 			end
 
-			if song.stream?
-				listened song
-			else
-				if LOLastfm::Song.is_scrobblable?(position, song.length)
+			if song
+				if song.stream?
 					listened song
 				else
-					stopped_playing!
+					if LOLastfm::Song.is_scrobblable?(position, song.length)
+						listened song
+					else
+						stopped_playing!
+					end
 				end
 			end
 

@@ -53,6 +53,8 @@ class LOLastfm
 	def start
 		return if started?
 
+		@started = true
+
 		@server = if @host && @port
 			EM.start_server(host, port, LOLastfm::Connection) {|conn|
 				conn.fm = self
@@ -78,6 +80,8 @@ class LOLastfm
 		EM.cancel_timer @timer
 
 		@checker.stop if @checker
+
+		@started = false
 	ensure
 		save
 	end
@@ -180,7 +184,7 @@ class LOLastfm
 
 	def listened! (song)
 		@session.track.scrobble(song.artist, song.title, song.listened_at.to_time.to_i, song.album, song.track, song.id, song.length)
-	rescue SystemCallError, SocketError
+	rescue SystemCallError, SocketError, EOFError
 		false
 	rescue Exception => e
 		log e, :listened
@@ -207,7 +211,7 @@ class LOLastfm
 
 	def love! (song)
 		@session.track.love(song.artist, song.title)
-	rescue SystemCallError, SocketError
+	rescue SystemCallError, SocketError, EOFError
 		false
 	rescue Exception => e
 		log e, :love
@@ -234,7 +238,7 @@ class LOLastfm
 
 	def unlove! (song)
 		@session.track.unlove(song.artist, song.title)
-	rescue SystemCallError, SocketError
+	rescue SystemCallError, SocketError, EOFError
 		false
 	rescue Exception => e
 		log e, :unlove

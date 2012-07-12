@@ -55,12 +55,10 @@ LOLastfm.define_checker :moc do
 
 						if @song.stream?
 							listened @song
+						elsif LOLastfm::Song.is_scrobblable?(@position, @song.length)
+							listened @song
 						else
-							if LOLastfm::Song.is_scrobblable?(@position, @song.length)
-								listened @song
-							else
-								stopped_playing!
-							end
+							stopped_playing!
 						end
 
 						@song = nil

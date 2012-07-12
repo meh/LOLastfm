@@ -8,15 +8,6 @@
 #  0. You just DO WHAT THE FUCK YOU WANT TO.
 #++
 
-#--
-# TODO: Find a nice way to check if the song is actually scrobblable based on position.
-#       Right now there's no way to do it based on the MPD's event loop, the only way would
-#       be to timeout after some seconds and save the current position, possibly a smart move
-#       could be to add a timeout parameter to #loop.
-#
-#       Still gotta think about it tho.
-#++
-
 require 'mpd'
 
 class MPD::Controller::Status
@@ -37,7 +28,7 @@ class MPD::Controller::Status
 			length:  song.duration,
 			comment: comment,
 			path:    path,
-			stream:  !!song.file
+			stream:  !!comment
 		)
 	end
 end
@@ -65,6 +56,10 @@ LOLastfm.define_checker :mpd do
 		end
 
 		Thread.new {
+			timeout = set_interval settings[:every] do
+				@mpd.stop_waiting
+			end
+
 			begin
 				@mpd.loop {|e|
 					if e == :player
@@ -73,18 +68,36 @@ LOLastfm.define_checker :mpd do
 						if status == :stop
 							next unless @last
 
-							listened @last.to_song
+							song = @last.to_song
+
+							if song.stream?
+								listened song
+							elsif LOLastfm::Song.is_scrobblable?(@position, song.length)
+								listened song
+							else
+								stopped_playing!
+							end
 						elsif status == :pause
 							stopped_playing!
 						else
 							if @last == :play
-								listened @last.to_song
+								song = @last.to_song
+
+								if song.stream?
+									listened song
+								elsif LOLastfm::Song.is_scrobblable?(@position, song.length)
+									listened song
+								end
 							end
+
+							@position = 0
 
 							now_playing status.to_song
 						end
 
 						@last = @mpd.status
+					elsif e == :break
+						@position = @mpd.status.song.position
 					end
 				}
 			rescue Exception => e
@@ -104,6 +117,8 @@ LOLastfm.define_checker :mpd do
 					end
 				end
 			end
+
+			clear_timeout timeout
 
 			set_timeout settings[:every], &create unless stopped?
 		}

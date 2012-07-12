@@ -273,7 +273,7 @@ class LOLastfm
 			name = args.shift.to_sym
 
 			if args.first.is_a? String
-				require args.pop
+				require args.shift
 			elsif !self.class.checkers[name]
 				begin
 					require "LOLastfm/checkers/#{name}"

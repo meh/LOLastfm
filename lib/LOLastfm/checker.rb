@@ -87,13 +87,17 @@ class Checker
 
 	def set_timeout (*args, &block)
 		EM.schedule {
-			@timers << EM.add_timer(*args, &block)
+			EM.add_timer(*args, &block).tap {|timer|
+				@timers << timer
+			}
 		}
 	end
 
 	def set_interval (*args, &block)
 		EM.schedule {
-			@timers << EM.add_periodic_timer(*args, &block)
+			EM.add_periodic_timer(*args, &block).tap {|timer|
+				@timers << timer
+			}
 		}
 	end
 
@@ -102,6 +106,8 @@ class Checker
 			EM.cancel_timer(what)
 		}
 	end
+
+	alias clear_interval clear_timeout
 end
 
 end

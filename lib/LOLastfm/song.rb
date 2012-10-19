@@ -34,9 +34,9 @@ class Song
 		data = Hash[data.map { |key, value| [key.to_sym, value] }]
 
 		@track       = data[:track] && data[:track].to_i
-		@title       = data[:title]
-		@album       = data[:album]
-		@artist      = data[:artist]
+		@title       = data[:title] && data[:title].strip
+		@album       = data[:album] && data[:album].strip
+		@artist      = data[:artist] && data[:artist].strip
 		@length      = data[:length] && data[:length].to_i
 		@comment     = data[:comment]
 		@listened_at = data[:listened_at]
@@ -60,6 +60,10 @@ class Song
 				@listened_at = DateTime.now
 			end
 		end
+
+		@title = nil if @title && @title.strip.empty?
+		@album = nil if @album && @album.empty?
+		@arist = nil if @artist && @artist.empty?
 	end
 
 	def fill!

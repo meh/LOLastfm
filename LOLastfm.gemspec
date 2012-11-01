@@ -14,6 +14,7 @@ Gem::Specification.new {|s|
 	s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
 	s.require_paths = ['lib']
 
+	s.add_dependency 'eventmachine'
 	s.add_dependency 'lastfm'
 	s.add_dependency 'taglib-ruby'
 }

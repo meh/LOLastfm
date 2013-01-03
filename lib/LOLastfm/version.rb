@@ -10,6 +10,6 @@
 
 class LOLastfm
 	def self.version
-		'0.0.3.5'
+		'0.0.3.6'
 	end
 end

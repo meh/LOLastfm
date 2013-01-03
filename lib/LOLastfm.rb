@@ -263,7 +263,9 @@ class LOLastfm
 	end
 
 	def use (*args, &block)
-		return if args.empty? && !block
+		if args.empty? && !block
+			raise ArgumentError, 'no name or block given'
+		end
 
 		unless args.first.respond_to?(:to_hash) || block
 			name = args.shift.to_sym
@@ -276,7 +278,9 @@ class LOLastfm
 				rescue LoadError; end
 			end
 
-			block = self.class.checkers[name]
+			unless block = self.class.checkers[name]
+				raise ArgumentError, "#{name} checker could not be found"
+			end
 		end
 
 		if @checker

@@ -8,7 +8,7 @@
 #  0. You just DO WHAT THE FUCK YOU WANT TO.
 #++
 
-require 'taglib'
+require 'taglib2'
 require 'json'
 require 'yaml'
 require 'date'
@@ -69,45 +69,19 @@ class Song
 	def fill!
 		return if !@path || (@track && @title && @album && @artist && @comment && @length && @id)
 
-		TagLib::FileRef.open(@path) {|f|
-			if f.tag
-				@track   = f.tag.track && f.tag.track.to_i unless @track
-				@title   = f.tag.title unless @title
-				@album   = f.tag.album unless @album
-				@artist  = f.tag.artist unless @artist
-				@comment = f.tag.comment unless @comment
-			end
+		TagLib::File.new(@path).tap {|f|
+			@track   = f.track && f.track.to_i if f.track && !@track
+			@title   = f.title if f.title && !@title
+			@album   = f.album if f.album && !@album
+			@artist  = f.artist if f.artist && !@artist
+			@comment = f.comment if f.comment && !@comment
 
-			if f.audio_properties
-				@length = f.audio_properties.length.to_i unless @length
-			end
+			begin
+				@length = f.length.to_i if f.length && !@length
+			rescue TagLib::BadAudioProperties; end
+
+			f.close
 		}
-
-		unless @id
-			TagLib::MPEG::File.new(@path).tap {|file|
-				next unless tag = file.id3v2_tag
-
-				if ufid = tag.frame_list('UFID').find { |u| u.owner == 'http://musicbrainz.org' }
-					@id = ufid.identifier
-				end
-			}
-		end
-
-		unless @id
-			TagLib::FLAC::File.new(@path).tap {|file|
-				next unless tag = file.xiph_comment
-
-				@id = tag.field_list_map['MUSICBRAINZ_TRACKID']
-			}
-		end
-
-		unless @id
-			TagLib::Ogg::Vorbis::File.new(@path).tap {|file|
-				next unless tag = file.tag
-
-				@id = tag.field_list_map['MUSICBRAINZ_TRACKID']
-			}
-		end
 	end
 
 	def stream?; !!@stream;      end

@@ -66,7 +66,9 @@ class Cache
 	end
 
 	def load (path)
-		data = YAML.parse_file(path).transform
+		return unless data = YAML.parse_file(path)
+
+		data = data.transform
 
 		data[:listened].each {|song|
 			listened(Song.new(song))
